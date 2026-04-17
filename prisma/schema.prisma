@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  content     String
+  excerpt     String
+  coverImage  String?
+  type        String    @default("blog") // "blog" | "activity"
+  category    String    @default("general")
+  tags        String    @default("")
+  authorName  String    @default("匿名用户")
+  isPinned    Boolean   @default(false)
+  isFeatured  Boolean   @default(false)
+  isPublished Boolean   @default(true)
+  viewCount   Int       @default(0)
+  likeCount   Int       @default(0)
+  attachments String    @default("")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  comments Comment[]
+  likes    Like[]
+
+  eventDate     DateTime?
+  eventLocation String?
+  eventLink     String?
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  content    String
+  authorName String   @default("匿名用户")
+  postId     String
+  parentId   String?
+  createdAt  DateTime @default(now())
+
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies Comment[] @relation("CommentReplies")
+}
+
+model Like {
+  id          String   @id @default(cuid())
+  postId      String
+  fingerprint String
+  createdAt   DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, fingerprint])
+}
+
+model Category {
+  id    String  @id @default(cuid())
+  name  String  @unique
+  slug  String  @unique
+  icon  String?
+  order Int     @default(0)
+}
