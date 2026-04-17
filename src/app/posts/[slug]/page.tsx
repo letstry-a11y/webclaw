@@ -1,13 +1,15 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
-import { Eye, Calendar, Tag, User, Paperclip, Download, FileText } from "lucide-react";
+import { Eye, Calendar, Tag, User, Paperclip, Download, FileText, Pencil } from "lucide-react";
 import Link from "next/link";
 import LikeButton from "@/components/shared/LikeButton";
 import CommentSection from "@/components/comment/CommentSection";
 import ViewCounter from "@/components/shared/ViewCounter";
 import type { Metadata } from "next";
 import type { Attachment } from "@/lib/validators";
+import { isAdmin } from "@/lib/auth";
+import { getFingerprint } from "@/lib/fingerprint";
 
 function parseAttachments(raw: string): Attachment[] {
   if (!raw) return [];
@@ -65,6 +67,10 @@ export default async function PostPage({ params }: Props) {
   const tags = post.tags.split(",").filter(Boolean).map((t) => t.trim());
   const attachments = parseAttachments(post.attachments);
 
+  const admin = await isAdmin();
+  const fp = await getFingerprint();
+  const canEdit = admin || (!!post.authorFingerprint && post.authorFingerprint === fp);
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
       <ViewCounter postId={post.id} />
@@ -72,9 +78,20 @@ export default async function PostPage({ params }: Props) {
       {/* Article Header */}
       <article>
         <header className="mb-8">
-          <h1 className="text-3xl font-bold text-text-primary mb-4 leading-tight">
-            {post.title}
-          </h1>
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <h1 className="text-3xl font-bold text-text-primary leading-tight flex-1">
+              {post.title}
+            </h1>
+            {canEdit && (
+              <Link
+                href={`/posts/${post.slug}/edit`}
+                className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                编辑
+              </Link>
+            )}
+          </div>
 
           <div className="flex flex-wrap items-center gap-4 text-sm text-text-secondary mb-4">
             <span className="flex items-center gap-1.5">

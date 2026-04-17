@@ -34,10 +34,16 @@ body {
 }
 
 /* Tiptap editor styles */
+.tiptap-wrapper {
+  min-height: calc(100vh - 260px);
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+}
+
 .tiptap {
   outline: none;
-  min-height: 300px;
-  padding: 1rem;
+  min-height: 100%;
+  padding: 1.25rem 1.5rem;
 }
 
 .tiptap p {

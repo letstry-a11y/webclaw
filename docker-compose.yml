@@ -1,0 +1,28 @@
+services:
+  webclaw:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: webclaw:latest
+    container_name: webclaw
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: "file:/app/data/dev.db"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}"
+      JWT_SECRET: "${JWT_SECRET:?JWT_SECRET must be set (use a long random string)}"
+      SEED_ON_STARTUP: "${SEED_ON_STARTUP:-false}"
+    volumes:
+      - webclaw-data:/app/data
+      - webclaw-uploads:/app/public/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  webclaw-data:
+  webclaw-uploads:

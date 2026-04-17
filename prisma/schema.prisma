@@ -18,6 +18,7 @@ model Post {
   category    String    @default("general")
   tags        String    @default("")
   authorName  String    @default("匿名用户")
+  authorFingerprint String @default("")
   isPinned    Boolean   @default(false)
   isFeatured  Boolean   @default(false)
   isPublished Boolean   @default(true)
