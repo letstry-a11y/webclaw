@@ -1,7 +1,6 @@
-import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/auth";
 import Link from "next/link";
-import { LayoutDashboard, FileText, Calendar, MessageCircle, Tags, LogOut } from "lucide-react";
+import { LayoutDashboard, FileText, Calendar, MessageCircle, Tags, LogOut, BrainCircuit } from "lucide-react";
 
 export default async function AdminLayout({
   children,
@@ -17,9 +16,12 @@ export default async function AdminLayout({
         <div className="flex gap-6">
           {/* Sidebar */}
           <aside className="hidden md:block w-56 shrink-0">
-            <nav className="bg-white rounded-xl border border-border-light p-4 sticky top-24 space-y-1">
+            <nav className="bg-[#111411] border border-border p-4 sticky top-24 space-y-1">
               <Link href="/admin" className="flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:text-primary hover:bg-primary-light rounded-lg transition-colors">
                 <LayoutDashboard className="w-4 h-4" /> 仪表盘
+              </Link>
+              <Link href="/ai-projects" className="flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:text-primary hover:bg-primary-light rounded-lg transition-colors">
+                <BrainCircuit className="w-4 h-4" /> AI 项目看板
               </Link>
               <Link href="/admin/posts" className="flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:text-primary hover:bg-primary-light rounded-lg transition-colors">
                 <FileText className="w-4 h-4" /> 文章管理

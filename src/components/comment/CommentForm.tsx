@@ -81,7 +81,7 @@ export default function CommentForm({ postId, parentId, onSuccess, onCancel, com
         <button
           type="submit"
           disabled={!content.trim() || loading}
-          className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary-hover text-white text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary-hover text-black text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <Send className="w-3.5 h-3.5" />
           {loading ? "发送中..." : "发送"}

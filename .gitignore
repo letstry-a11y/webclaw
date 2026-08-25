@@ -43,6 +43,10 @@ next-env.d.ts
 
 /src/generated/prisma
 
+# local working artifacts
+/tmp/
+/AI应用项目激励办法.pdf
+
 # uploaded files
 /public/uploads/
 

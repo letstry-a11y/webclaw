@@ -25,13 +25,13 @@ async function main() {
   // Seed sample posts
   const posts = [
     {
-      title: "欢迎来到 WebClaw 社区",
+      title: "欢迎来到 Medbot 社区",
       slug: "welcome-to-webclaw",
-      content: "<h2>欢迎！</h2><p>WebClaw 是一个开放的匿名博客社区。在这里，你可以自由地分享你的想法、技术心得、生活感悟。</p><p>无需注册，即刻开始写作。让我们一起构建一个开放、包容的知识分享平台。</p><h3>特色功能</h3><ul><li>匿名发布，无需注册</li><li>支持富文本编辑器</li><li>点赞和评论互动</li><li>活动发起与参与</li></ul>",
-      excerpt: "WebClaw 是一个开放的匿名博客社区。在这里，你可以自由地分享你的想法、技术心得、生活感悟。",
+      content: "<h2>欢迎！</h2><p>Medbot 是一个开放的 AI 实践社区。在这里，你可以自由地分享想法、技术心得与真实应用经验。</p><p>无需注册，即刻开始写作。让我们一起构建一个开放、包容的知识分享平台。</p><h3>特色功能</h3><ul><li>匿名发布，无需注册</li><li>支持富文本编辑器</li><li>点赞和评论互动</li><li>活动发起与参与</li></ul>",
+      excerpt: "Medbot 是一个开放的 AI 实践社区，在这里自由分享想法、技术心得与真实应用经验。",
       category: "general",
       tags: "公告,社区",
-      authorName: "WebClaw 团队",
+      authorName: "Medbot 团队",
       isPinned: true,
       isFeatured: true,
     },
@@ -79,7 +79,7 @@ async function main() {
       type: "activity",
       category: "share",
       tags: "活动,开源,分享",
-      authorName: "WebClaw 团队",
+      authorName: "Medbot 团队",
       isPinned: true,
     },
   ];
@@ -90,6 +90,78 @@ async function main() {
       update: {},
       create: post,
     });
+  }
+
+  // Seed AI initiative dashboard data
+  const aiProjects = [
+    {
+      id: "ai-opportunity-search",
+      name: "商机检索系统",
+      subtitle: "高价值商机检索与 LinkedIn 自动触达",
+      status: "delivered",
+      order: 1,
+      progress: "商机检索系统已完成交付",
+      actions: [
+        { task: "合并商机系统至现有 LinkedIn 操作系统，共用数据库，并自动联系检索出的高价值对象", owner: "曹起", dueDate: new Date("2026-08-25T00:00:00+08:00") },
+      ],
+    },
+    {
+      id: "ai-my-medbot",
+      name: "My Medbot",
+      subtitle: "医疗智能助手与销售出差信息协同",
+      status: "launched",
+      order: 2,
+      progress: "已在 Apple Store 发布",
+      actions: [
+        { task: "销售出差信息记录系统的 UI 交互", owner: "徐鑫鑫", dueDate: new Date("2026-08-28T00:00:00+08:00") },
+        { task: "语音识别与数据库推送钉钉，输出方案", owner: "王超", dueDate: new Date("2026-08-25T00:00:00+08:00") },
+        { task: "商业化语音模型调研", owner: "明峰", dueDate: new Date("2026-08-28T00:00:00+08:00") },
+        { task: "波兰 App 发布", owner: "林宇豪", dueDate: new Date("2026-08-28T00:00:00+08:00") },
+      ],
+    },
+    {
+      id: "ai-product-ordering",
+      name: "产品配置与下单系统",
+      subtitle: "产品配置、Agent 网络与下单链路建设",
+      status: "evaluating",
+      order: 3,
+      progress: "预计 8.21 试用结束，进入问题评估阶段",
+      actions: [
+        { task: "评估试用问题，并给出解决方案", owner: "向婷婷", dueDate: new Date("2026-08-25T00:00:00+08:00") },
+        { task: "规划 Agent 网络建设与服务器部署环境", owner: "于新航", dueDate: new Date("2026-08-28T00:00:00+08:00") },
+      ],
+    },
+  ];
+
+  for (const item of aiProjects) {
+    const project = await prisma.aiProject.upsert({
+      where: { id: item.id },
+      update: {},
+      create: {
+        id: item.id,
+        name: item.name,
+        subtitle: item.subtitle,
+        status: item.status,
+        order: item.order,
+      },
+    });
+
+    const [progressCount, actionCount] = await Promise.all([
+      prisma.aiProjectProgress.count({ where: { projectId: project.id } }),
+      prisma.aiActionItem.count({ where: { projectId: project.id } }),
+    ]);
+
+    if (progressCount === 0) {
+      await prisma.aiProjectProgress.create({
+        data: { projectId: project.id, content: item.progress },
+      });
+    }
+
+    if (actionCount === 0) {
+      await prisma.aiActionItem.createMany({
+        data: item.actions.map((action) => ({ ...action, projectId: project.id })),
+      });
+    }
   }
 
   // Seed some comments

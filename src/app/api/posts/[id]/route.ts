@@ -22,6 +22,9 @@ const updatePostSchema = z.object({
   tags: z.string().optional(),
   authorName: z.string().max(50).optional(),
   attachments: z.array(attachmentSchema).max(20).optional(),
+  eventDate: z.union([z.string(), z.null()]).optional(),
+  eventLocation: z.union([z.string(), z.null()]).optional(),
+  eventLink: z.union([z.string(), z.null()]).optional(),
 });
 
 async function canWrite(postId: string): Promise<{ allowed: boolean; status: number; post?: { authorFingerprint: string } }> {
@@ -90,6 +93,9 @@ export async function PATCH(
     if (data.attachments !== undefined) {
       updateData.attachments = data.attachments.length ? JSON.stringify(data.attachments) : "";
     }
+    if (data.eventDate !== undefined) updateData.eventDate = data.eventDate ? new Date(data.eventDate) : null;
+    if (data.eventLocation !== undefined) updateData.eventLocation = data.eventLocation || null;
+    if (data.eventLink !== undefined) updateData.eventLink = data.eventLink || null;
 
     await prisma.post.update({ where: { id }, data: updateData });
     return NextResponse.json({ success: true });

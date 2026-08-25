@@ -39,7 +39,7 @@ export default async function Sidebar() {
   return (
     <aside className="space-y-6">
       {/* Categories */}
-      <div className="bg-white rounded-xl p-5 border border-border-light">
+      <div className="bg-[#111411] p-5 border border-border">
         <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
           <Tag className="w-4 h-4 text-primary" />
           分类
@@ -60,14 +60,14 @@ export default async function Sidebar() {
 
       {/* Hot Tags */}
       {popularTags.length > 0 && (
-        <div className="bg-white rounded-xl p-5 border border-border-light">
+        <div className="bg-[#111411] p-5 border border-border">
           <h3 className="text-sm font-semibold text-text-primary mb-3">热门标签</h3>
           <div className="flex flex-wrap gap-2">
             {popularTags.map((tag) => (
               <Link
                 key={tag}
                 href={`/tags/${encodeURIComponent(tag)}`}
-                className="px-3 py-1 text-xs bg-tag-bg text-tag-text rounded-full hover:bg-primary hover:text-white transition-colors"
+                className="px-3 py-1 text-xs bg-tag-bg text-tag-text border border-border hover:bg-primary hover:text-black transition-colors"
               >
                 {tag}
               </Link>
@@ -78,7 +78,7 @@ export default async function Sidebar() {
 
       {/* Trending Posts */}
       {hotPosts.length > 0 && (
-        <div className="bg-white rounded-xl p-5 border border-border-light">
+        <div className="bg-[#111411] p-5 border border-border">
           <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-accent" />
             热门文章
@@ -104,7 +104,7 @@ export default async function Sidebar() {
 
       {/* Recent Activities */}
       {activities.length > 0 && (
-        <div className="bg-white rounded-xl p-5 border border-border-light">
+        <div className="bg-[#111411] p-5 border border-border">
           <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
             <Calendar className="w-4 h-4 text-success" />
             最新活动

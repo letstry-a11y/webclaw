@@ -12,7 +12,7 @@ cp .env.example .env
 docker compose up -d --build
 
 # 3. 访问
-open http://localhost:3000
+open http://localhost:3100
 ```
 
 首次启动会自动执行 `prisma migrate deploy` 建表。
@@ -23,6 +23,12 @@ open http://localhost:3000
 docker compose exec webclaw sh -c 'DATABASE_URL=file:/app/data/dev.db node -e "require(\"@prisma/client\"); console.log(\"client ok\")"'
 # 由于 seed 需要 tsx（dev-only），推荐在宿主机运行一次：
 DATABASE_URL="file:$(docker volume inspect webclaw_webclaw-data -f '{{.Mountpoint}}')/dev.db" npm run seed
+```
+
+AI 项目看板初始数据可在容器启动后安全补齐（重复执行不会重复创建）：
+
+```bash
+docker compose exec webclaw node prisma/seed-ai.js
 ```
 
 或在 `.env` 里设 `SEED_ON_STARTUP=true` 再启动一次（tsx 必须打进镜像才生效，默认未包含）。

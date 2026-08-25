@@ -1,28 +1,37 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
-import { Eye, Calendar, MapPin, ExternalLink, Tag } from "lucide-react";
+import { Eye, Calendar, MapPin, ExternalLink, Pencil } from "lucide-react";
 import Link from "next/link";
 import LikeButton from "@/components/shared/LikeButton";
 import CommentSection from "@/components/comment/CommentSection";
 import ViewCounter from "@/components/shared/ViewCounter";
 import type { Metadata } from "next";
+import { isAdmin } from "@/lib/auth";
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
+const legacyActivitySlugs: Record<string, string> = {
+  "openclaw探索小组报名": "agent探索小组报名",
+};
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug: raw } = await params;
-  const slug = decodeURIComponent(raw);
+  const decodedSlug = decodeURIComponent(raw);
+  const slug = legacyActivitySlugs[decodedSlug] ?? decodedSlug;
   const post = await prisma.post.findUnique({ where: { slug } });
   if (!post) return { title: "活动未找到" };
-  return { title: `${post.title} - WebClaw`, description: post.excerpt };
+  return { title: `${post.title} - Medbot`, description: post.excerpt };
 }
 
 export default async function ActivityPage({ params }: Props) {
   const { slug: raw } = await params;
   const slug = decodeURIComponent(raw);
+  if (legacyActivitySlugs[slug]) {
+    permanentRedirect(`/activities/${encodeURIComponent(legacyActivitySlugs[slug])}`);
+  }
   const post = await prisma.post.findUnique({
     where: { slug, isPublished: true, type: "activity" },
     include: {
@@ -37,6 +46,8 @@ export default async function ActivityPage({ params }: Props) {
 
   if (!post) notFound();
 
+  const admin = await isAdmin();
+
   const tags = post.tags.split(",").filter(Boolean).map((t) => t.trim());
 
   return (
@@ -45,10 +56,23 @@ export default async function ActivityPage({ params }: Props) {
 
       <article>
         <header className="mb-8">
-          <div className="inline-flex items-center px-3 py-1 text-sm font-medium bg-success/10 text-success rounded-full mb-4">
-            活动
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="flex-1">
+              <div className="inline-flex items-center px-3 py-1 text-sm font-medium bg-success/10 text-success rounded-full mb-3">
+                活动
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight text-text-primary">{post.title}</h1>
+            </div>
+            {admin && (
+              <Link
+                href={`/admin/activities/${post.id}/edit`}
+                className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                编辑
+              </Link>
+            )}
           </div>
-          <h1 className="text-3xl font-bold text-text-primary mb-4">{post.title}</h1>
 
           <div className="flex flex-wrap items-center gap-4 text-sm text-text-secondary mb-4">
             <span className="flex items-center gap-1.5">
@@ -84,7 +108,7 @@ export default async function ActivityPage({ params }: Props) {
                 <Link
                   key={tag}
                   href={`/tags/${encodeURIComponent(tag)}`}
-                  className="px-3 py-1 text-xs bg-tag-bg text-tag-text rounded-full hover:bg-primary hover:text-white transition-colors"
+                  className="px-3 py-1 text-xs bg-tag-bg text-tag-text border border-border hover:bg-primary hover:text-black transition-colors"
                 >
                   {tag}
                 </Link>
@@ -93,7 +117,7 @@ export default async function ActivityPage({ params }: Props) {
           )}
         </header>
 
-        <div className="post-content bg-white rounded-xl p-6 sm:p-8 border border-border-light mb-8" dangerouslySetInnerHTML={{ __html: post.content }} />
+        <div className="post-content bg-white p-6 sm:p-8 border border-[#e3e6e1] mb-8" dangerouslySetInnerHTML={{ __html: post.content }} />
 
         <div className="flex items-center justify-center py-6">
           <LikeButton postId={post.id} initialCount={post.likeCount} />

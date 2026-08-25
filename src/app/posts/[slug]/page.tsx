@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = await prisma.post.findUnique({ where: { slug } });
   if (!post) return { title: "文章未找到" };
   return {
-    title: `${post.title} - WebClaw`,
+    title: `${post.title} - Medbot`,
     description: post.excerpt,
   };
 }
@@ -79,7 +79,7 @@ export default async function PostPage({ params }: Props) {
       <article>
         <header className="mb-8">
           <div className="flex items-start justify-between gap-4 mb-4">
-            <h1 className="text-3xl font-bold text-text-primary leading-tight flex-1">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary leading-tight flex-1">
               {post.title}
             </h1>
             {canEdit && (
@@ -121,7 +121,7 @@ export default async function PostPage({ params }: Props) {
                 <Link
                   key={tag}
                   href={`/tags/${encodeURIComponent(tag)}`}
-                  className="px-3 py-1 text-xs bg-tag-bg text-tag-text rounded-full hover:bg-primary hover:text-white transition-colors"
+                  className="px-3 py-1 text-xs bg-tag-bg text-tag-text border border-border hover:bg-primary hover:text-black transition-colors"
                 >
                   {tag}
                 </Link>
@@ -139,13 +139,13 @@ export default async function PostPage({ params }: Props) {
 
         {/* Content */}
         <div
-          className="post-content bg-white rounded-xl p-6 sm:p-8 border border-border-light mb-8"
+          className="post-content bg-white p-6 sm:p-8 border border-[#e3e6e1] mb-8"
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
 
         {/* Attachments */}
         {attachments.length > 0 && (
-          <div className="mb-8 bg-white rounded-xl border border-border-light p-5 sm:p-6">
+          <div className="mb-8 bg-[#111411] border border-border p-5 sm:p-6">
             <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary mb-4">
               <Paperclip className="w-4 h-4 text-primary" />
               附件 ({attachments.length})

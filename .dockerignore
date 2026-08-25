@@ -17,10 +17,12 @@ public/uploads
 coverage
 *.tsbuildinfo
 next-env.d.ts
+tmp
+AI应用项目激励办法.pdf
 Dockerfile
 docker-compose.yml
 .dockerignore
-docker/
+docker/README.md
 README.md
 AGENTS.md
 CLAUDE.md

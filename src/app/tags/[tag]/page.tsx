@@ -13,7 +13,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { tag } = await params;
-  return { title: `#${decodeURIComponent(tag)} - WebClaw` };
+  return { title: `#${decodeURIComponent(tag)} - Medbot` };
 }
 
 export default async function TagPage({ params, searchParams }: Props) {

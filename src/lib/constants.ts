@@ -1,4 +1,4 @@
-export const SITE_NAME = "WebClaw";
+export const SITE_NAME = "Medbot";
 export const SITE_DESCRIPTION = "一个开放的匿名博客社区，人人都可以自由撰写和分享";
 export const POSTS_PER_PAGE = 12;
 

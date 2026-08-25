@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "WebClaw - 开放的匿名博客社区",
-  description: "一个开放的匿名博客社区，人人都可以自由撰写和分享",
+  title: "Medbot - 开放的 AI 实践社区",
+  description: "一个开放透明的 AI 实践社区，人人都可以自由撰写和分享",
 };
 
 export default function RootLayout({

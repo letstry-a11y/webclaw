@@ -14,7 +14,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const category = await prisma.category.findUnique({ where: { slug } });
-  return { title: `${category?.name || slug} - WebClaw` };
+  return { title: `${category?.name || slug} - Medbot` };
 }
 
 export default async function CategoryPage({ params, searchParams }: Props) {

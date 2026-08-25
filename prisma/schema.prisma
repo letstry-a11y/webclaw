@@ -67,3 +67,38 @@ model Category {
   icon  String?
   order Int     @default(0)
 }
+
+model AiProject {
+  id        String   @id @default(cuid())
+  name      String
+  subtitle  String   @default("")
+  status    String   @default("planning")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  progress AiProjectProgress[]
+  actions  AiActionItem[]
+}
+
+model AiProjectProgress {
+  id        String   @id @default(cuid())
+  content   String
+  projectId String
+  createdAt DateTime @default(now())
+
+  project AiProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model AiActionItem {
+  id          String   @id @default(cuid())
+  task        String
+  owner       String
+  dueDate     DateTime
+  isCompleted Boolean  @default(false)
+  projectId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project AiProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}

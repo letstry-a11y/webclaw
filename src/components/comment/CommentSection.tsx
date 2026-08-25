@@ -27,7 +27,7 @@ export default function CommentSection({ postId, comments: initialComments }: Co
   };
 
   return (
-    <section className="bg-white rounded-xl p-6 sm:p-8 border border-border-light">
+    <section className="bg-[#111411] p-6 sm:p-8 border border-border">
       <h3 className="text-lg font-semibold text-text-primary mb-6 flex items-center gap-2">
         <MessageCircle className="w-5 h-5 text-primary" />
         评论 ({comments.reduce((acc, c) => acc + 1 + c.replies.length, 0)})

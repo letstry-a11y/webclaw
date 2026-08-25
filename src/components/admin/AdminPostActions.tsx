@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Pin, Star, Trash2, Eye, EyeOff } from "lucide-react";
+import { Pin, Star, Trash2, Eye, EyeOff, Download } from "lucide-react";
 import type { Post } from "@/types";
 
 export default function AdminPostActions({ post }: { post: Post }) {
@@ -16,6 +16,18 @@ export default function AdminPostActions({ post }: { post: Post }) {
     if (res.ok) router.refresh();
   };
 
+  const handleDownloadMarkdown = async () => {
+    const res = await fetch(`/api/posts/${post.id}/markdown`);
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${post.slug || post.id}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleDelete = async () => {
     if (!confirm("确定要删除这篇文章吗？")) return;
     const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
@@ -24,6 +36,13 @@ export default function AdminPostActions({ post }: { post: Post }) {
 
   return (
     <div className="flex items-center gap-1">
+      <button
+        onClick={handleDownloadMarkdown}
+        title="下载为 Markdown"
+        className="p-1.5 rounded text-text-tertiary hover:text-primary hover:bg-primary/5 transition-colors"
+      >
+        <Download className="w-3.5 h-3.5" />
+      </button>
       <button
         onClick={() => handleAction("togglePin")}
         title={post.isPinned ? "取消置顶" : "置顶"}

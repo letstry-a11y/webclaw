@@ -4,8 +4,10 @@ import { Calendar } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "活动 - WebClaw",
+  title: "活动 - Medbot",
 };
+
+export const dynamic = "force-dynamic";
 
 export default async function ActivitiesPage() {
   const activities = await prisma.post.findMany({

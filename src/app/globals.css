@@ -1,23 +1,23 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-primary: #1e80ff;
-  --color-primary-hover: #1171e6;
-  --color-primary-light: #e8f3ff;
+  --color-primary: #76b900;
+  --color-primary-hover: #8bd000;
+  --color-primary-light: #182506;
   --color-accent: #f64242;
   --color-accent-hover: #e03030;
   --color-success: #1db954;
   --color-warning: #f5a623;
-  --color-bg: #f4f5f5;
-  --color-bg-card: #ffffff;
-  --color-bg-dark: #121212;
-  --color-text-primary: #252933;
-  --color-text-secondary: #8a919f;
-  --color-text-tertiary: #b2b2b2;
-  --color-border: #e4e6eb;
-  --color-border-light: #f0f0f0;
-  --color-tag-bg: #eef2ff;
-  --color-tag-text: #515767;
+  --color-bg: #080a09;
+  --color-bg-card: #111411;
+  --color-bg-dark: #050605;
+  --color-text-primary: #f4f7f2;
+  --color-text-secondary: #a4aaa1;
+  --color-text-tertiary: #697067;
+  --color-border: #2b3029;
+  --color-border-light: #1d211c;
+  --color-tag-bg: #1a2018;
+  --color-tag-text: #c5cbc2;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -25,7 +25,26 @@
 body {
   background: var(--color-bg);
   color: var(--color-text-primary);
-  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans), "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 6%, rgb(118 185 0 / 0.10), transparent 24rem),
+    linear-gradient(rgb(255 255 255 / 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.025) 1px, transparent 1px);
+  background-size: auto, 48px 48px, 48px 48px;
+  mask-image: linear-gradient(to bottom, black, transparent 72%);
+}
+
+::selection {
+  color: #071000;
+  background: #8bd000;
 }
 
 .dark body {
@@ -126,34 +145,39 @@ body {
 
 /* Post content styles (read mode) */
 .post-content {
-  line-height: 1.8;
+  color: #171a17;
+  font-family: Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.9;
+  letter-spacing: 0.01em;
 }
 
-.post-content p { margin: 0.75em 0; }
-.post-content h1 { font-size: 1.875rem; font-weight: 700; margin: 1.5em 0 0.75em; }
-.post-content h2 { font-size: 1.5rem; font-weight: 700; margin: 1.25em 0 0.625em; border-bottom: 1px solid var(--color-border-light); padding-bottom: 0.5em; }
-.post-content h3 { font-size: 1.25rem; font-weight: 600; margin: 1em 0 0.5em; }
+.post-content p { margin: 1em 0; }
+.post-content h1 { color: #080a08; font-size: 1.875rem; font-weight: 800; line-height: 1.25; margin: 1.5em 0 0.75em; letter-spacing: -0.02em; }
+.post-content h2 { color: #080a08; font-size: 1.5rem; font-weight: 750; line-height: 1.3; margin: 1.5em 0 0.625em; border-bottom: 1px solid #e3e6e1; padding-bottom: 0.5em; letter-spacing: -0.015em; }
+.post-content h3 { color: #080a08; font-size: 1.25rem; font-weight: 700; margin: 1.25em 0 0.5em; }
+.post-content strong { color: #080a08; font-weight: 700; }
 .post-content ul, .post-content ol { padding-left: 1.5rem; margin: 0.75em 0; }
 .post-content ul { list-style-type: disc; }
 .post-content ol { list-style-type: decimal; }
 .post-content li { margin: 0.25em 0; line-height: 1.75; }
-.post-content blockquote { border-left: 4px solid var(--color-primary); padding-left: 1rem; margin: 1em 0; color: var(--color-text-secondary); }
-.post-content code { background: var(--color-tag-bg); color: var(--color-primary); padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.875em; }
+.post-content blockquote { border-left: 4px solid var(--color-primary); padding-left: 1rem; margin: 1em 0; color: #4d534b; }
+.post-content code { background: #eef1ec; color: #416700; padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.875em; }
 .post-content pre { background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1em 0; }
 .post-content pre code { background: none; color: inherit; padding: 0; }
-.post-content a { color: var(--color-primary); text-decoration: underline; }
+.post-content a { color: #416700; text-decoration: underline; }
 .post-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 1em auto; display: block; }
-.post-content hr { border: none; border-top: 1px solid var(--color-border); margin: 2em 0; }
+.post-content hr { border: none; border-top: 1px solid #dfe3dc; margin: 2em 0; }
 .post-content table { width: 100%; border-collapse: collapse; margin: 1em 0; }
-.post-content th, .post-content td { border: 1px solid var(--color-border); padding: 0.5rem 0.75rem; text-align: left; }
-.post-content th { background: var(--color-bg); font-weight: 600; }
+.post-content th, .post-content td { border: 1px solid #dfe3dc; padding: 0.5rem 0.75rem; text-align: left; }
+.post-content th { background: #f4f6f2; font-weight: 600; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+::-webkit-scrollbar-thumb { background: #3b4138; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #76b900; }
 
 /* Animations */
 @keyframes fadeIn {

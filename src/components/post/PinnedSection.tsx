@@ -17,7 +17,7 @@ export default function PinnedSection({ posts }: PinnedSectionProps) {
           <Link
             key={post.id}
             href={post.type === "activity" ? `/activities/${post.slug}` : `/posts/${post.slug}`}
-            className="flex-none w-72 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-5 border border-primary/20 hover:shadow-md transition-all group"
+            className="relative flex-none w-72 overflow-hidden bg-[#111411] p-5 border border-primary/35 hover:border-primary hover:shadow-[0_12px_40px_rgba(118,185,0,0.12)] transition-all group before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary"
           >
             <div className="flex items-center gap-2 mb-2">
               {post.isPinned && (

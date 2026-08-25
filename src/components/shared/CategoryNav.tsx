@@ -33,10 +33,10 @@ export default function CategoryNav({ categories, basePath = "/posts" }: Categor
             key={cat.slug || "all"}
             href={href}
             className={cn(
-              "flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-colors",
+              "flex items-center gap-1.5 px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors border",
               isActive
-                ? "bg-primary text-white"
-                : "bg-white text-text-secondary hover:bg-primary-light hover:text-primary border border-border-light"
+                ? "bg-primary text-black border-primary"
+                : "bg-[#111411] text-text-secondary hover:bg-primary-light hover:text-primary border-border"
             )}
           >
             {cat.icon && <span>{cat.icon}</span>}

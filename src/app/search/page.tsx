@@ -11,7 +11,7 @@ interface Props {
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const sp = await searchParams;
-  return { title: sp.q ? `搜索: ${sp.q} - WebClaw` : "搜索 - WebClaw" };
+  return { title: sp.q ? `搜索: ${sp.q} - Medbot` : "搜索 - Medbot" };
 }
 
 export default async function SearchPage({ searchParams }: Props) {
