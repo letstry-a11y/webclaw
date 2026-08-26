@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 function DetailBlock({ title, children }: { title: string; children: React.ReactNode }) {
-  return <div><dt className="mb-1 text-[11px] font-black text-[#032a72]">{title}</dt><dd className="whitespace-pre-wrap text-sm leading-6 text-[#4f5f78]">{children}</dd></div>;
+  return <div><dt className="mb-1.5 text-sm font-black leading-6 text-[#032a72]">{title}</dt><dd className="whitespace-pre-wrap text-sm leading-6 text-[#4f5f78]">{children}</dd></div>;
 }
 
 function StageAction({ title, description, action, button }: { title: string; description: string; action: (formData: FormData) => void | Promise<void>; button: string }) {
