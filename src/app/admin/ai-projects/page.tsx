@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import Link from "next/link";
 import {
-  BrainCircuit, CalendarClock, ChevronDown, CircleDot, ClipboardPlus, Pencil,
+  BrainCircuit, CalendarClock, ChevronDown, CircleDot, ClipboardPlus, Handshake, Pencil,
   Rocket, Search, ShoppingCart, Smartphone, Users,
 } from "lucide-react";
 
@@ -78,7 +78,7 @@ function ProjectFields({ project }: {
 }
 
 export default async function AiProjectsDashboard() {
-  const projects = await prisma.aiProject.findMany({ orderBy: { order: "asc" } });
+  const projects = await prisma.aiProject.findMany({ orderBy: { order: "asc" }, include: { request: { select: { committeeAssistant: true } } } });
   const releasedCount = projects.filter((project) => project.status === "delivered" || project.status === "launched").length;
   const exploringCount = projects.length - releasedCount;
 
@@ -138,6 +138,7 @@ export default async function AiProjectsDashboard() {
                 <div className="mt-auto grid grid-cols-2 gap-3 border-t border-[#e2e8f2] pt-4 text-xs">
                   <div><span className="mb-1 flex items-center gap-1 text-[#8491a8]"><Users className="h-3.5 w-3.5" /> 负责人</span><strong className="font-medium text-[#26344b]">{project.owner || "待确认"}</strong></div>
                   <div><span className="mb-1 flex items-center gap-1 text-[#8491a8]"><CalendarClock className="h-3.5 w-3.5" /> 发布时间</span><strong className="font-medium text-[#26344b]">{project.releasePlan || "待确认"}</strong></div>
+                  <div className="col-span-2"><span className="mb-1 flex items-center gap-1 text-[#8491a8]"><Handshake className="h-3.5 w-3.5" /> AI发展委员会协助人</span><strong className="font-medium text-[#26344b]">{project.request?.committeeAssistant || "待指定"}</strong></div>
                 </div>
 
                 <details className="group mt-4 border-t border-[#e2e8f2] pt-3">
