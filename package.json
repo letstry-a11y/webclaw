@@ -9,7 +9,10 @@
     "lint": "eslint",
     "seed": "npx tsx prisma/seed.ts",
     "db:migrate": "npx prisma migrate dev",
-    "db:studio": "npx prisma studio"
+    "db:studio": "npx prisma studio",
+    "analytics:report": "node scripts/analytics-report.cjs",
+    "analytics:scheduler": "node scripts/weekly-analytics-scheduler.cjs",
+    "test:analytics": "TZ=Asia/Shanghai node --test scripts/analytics-report.test.cjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

@@ -9,6 +9,9 @@ interface Props {
   value: Attachment[];
   onChange: (list: Attachment[]) => void;
   max?: number;
+  uploadUrl?: string;
+  maxFileSizeMb?: number;
+  accept?: string;
 }
 
 function formatSize(size: number) {
@@ -17,7 +20,14 @@ function formatSize(size: number) {
   return `${(size / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export default function AttachmentUploader({ value, onChange, max = 10 }: Props) {
+export default function AttachmentUploader({
+  value,
+  onChange,
+  max = 10,
+  uploadUrl = "/api/upload",
+  maxFileSizeMb = 50,
+  accept,
+}: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -27,7 +37,7 @@ export default function AttachmentUploader({ value, onChange, max = 10 }: Props)
     const fd = new FormData();
     fd.append("file", file);
     fd.append("kind", "file");
-    const res = await fetch("/api/upload", { method: "POST", body: fd });
+    const res = await fetch(uploadUrl, { method: "POST", body: fd });
     if (!res.ok) {
       const { error } = await res.json().catch(() => ({ error: "上传失败" }));
       throw new Error(error || "上传失败");
@@ -95,13 +105,14 @@ export default function AttachmentUploader({ value, onChange, max = 10 }: Props)
           <span className="text-primary font-medium">点击上传</span> 或拖拽文件到此处
         </div>
         <div className="text-xs text-text-tertiary">
-          单文件最大 50MB · 最多 {max} 个
+          单文件最大 {maxFileSizeMb}MB · 最多 {max} 个
         </div>
       </div>
       <input
         ref={inputRef}
         type="file"
         multiple
+        accept={accept}
         className="hidden"
         onChange={(e) => {
           handleFiles(Array.from(e.target.files || []));

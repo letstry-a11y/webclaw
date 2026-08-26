@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import VisitTracker from "@/components/analytics/VisitTracker";
 import "./globals.css";
 
 const sourceHanSans = localFont({
@@ -26,6 +27,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className={sourceHanSans.variable}>
       <body className="min-h-screen flex flex-col bg-bg text-text-primary antialiased">
+        <VisitTracker />
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />

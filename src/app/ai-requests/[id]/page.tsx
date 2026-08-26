@@ -13,10 +13,11 @@ import {
 } from "@/lib/ai-project-workflow";
 import {
   ArrowLeft, ArrowRight, Award, Building2, CheckCircle2,
-  ClipboardCheck, Clock3, ExternalLink, Mail, Send,
+  ClipboardCheck, Clock3, Download, ExternalLink, FileText, Mail, Paperclip, Send,
   Target, UserCheck, Users,
 } from "lucide-react";
 import PointAllocationForm from "./PointAllocationForm";
+import { attachmentSchema, type Attachment } from "@/lib/validators";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,29 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 function DetailBlock({ title, children }: { title: string; children: React.ReactNode }) {
   return <div><dt className="mb-1.5 text-sm font-black leading-6 text-[#032a72]">{title}</dt><dd className="whitespace-pre-wrap text-sm leading-6 text-[#4f5f78]">{children}</dd></div>;
+}
+
+function parseAttachments(raw: string): Attachment[] {
+  if (!raw) return [];
+  try {
+    const parsed = attachmentSchema.array().safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : [];
+  } catch {
+    return [];
+  }
+}
+
+function formatAttachmentSize(size: number) {
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function LinkedText({ value }: { value: string }) {
+  const parts = value.split(/(https?:\/\/[^\s]+)/g);
+  return parts.map((part, index) => part.startsWith("http://") || part.startsWith("https://")
+    ? <a key={`${part}-${index}`} href={part} target="_blank" rel="noopener noreferrer" className="break-all font-bold text-[#032a72] underline decoration-[#4870ff] underline-offset-2 hover:text-[#4870ff]">{part}</a>
+    : part);
 }
 
 function StageAction({ title, description, action, button }: { title: string; description: string; action: (formData: FormData) => void | Promise<void>; button: string }) {
@@ -62,6 +86,7 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
   const currentIndex = requestStatuses.indexOf(request.status as AiRequestStatus);
   const selectedApplications = request.applications.filter((application) => application.status === "selected");
   const projectLead = request.teamMembers.find((member) => member.isLead);
+  const attachments = parseAttachments(request.attachments);
 
   return (
     <div className="min-h-full bg-[#f7f9fc] text-[#111827]">
@@ -90,7 +115,8 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
           <div className="space-y-6">
             <section className={panelClass}>
               <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="font-mono text-[10px] tracking-[0.18em] text-[#032a72]">REQUIREMENT BRIEF</p><h2 className="mt-2 text-2xl font-black">需求说明</h2></div>{request.activityPost && <Link href={`/activities/${request.activityPost.slug}`} className="inline-flex items-center gap-1.5 text-sm font-bold text-[#032a72]">查看社区招募活动<ExternalLink className="h-4 w-4 text-[#4870ff]" /></Link>}</div>
-              <dl className="mt-6 grid gap-5 sm:grid-cols-2"><DetailBlock title="业务背景">{request.background}</DetailBlock><DetailBlock title="当前问题">{request.currentProblem}</DetailBlock><DetailBlock title="希望实现的功能">{request.desiredFunctions}</DetailBlock><DetailBlock title="预期业务价值">{request.businessValue}</DetailBlock><DetailBlock title="预期交付成果">{request.expectedDeliverables}</DetailBlock><DetailBlock title="招募岗位与能力要求">{request.recruitmentRoles}</DetailBlock><DetailBlock title="可提供资源">{request.availableResources || "待补充"}</DetailBlock><DetailBlock title="每周预计投入">{request.weeklyCommitment || "待团队确认"}</DetailBlock></dl>
+              <dl className="mt-6 grid gap-5 sm:grid-cols-2"><DetailBlock title="业务背景">{request.background}</DetailBlock><DetailBlock title="当前问题">{request.currentProblem}</DetailBlock><DetailBlock title="希望实现的功能">{request.desiredFunctions}</DetailBlock><DetailBlock title="预期业务价值">{request.businessValue}</DetailBlock><DetailBlock title="预期交付成果">{request.expectedDeliverables}</DetailBlock><DetailBlock title="招募岗位与能力要求">{request.recruitmentRoles}</DetailBlock><DetailBlock title="可提供资源">{request.availableResources ? <LinkedText value={request.availableResources} /> : "待补充"}</DetailBlock><DetailBlock title="每周预计投入">{request.weeklyCommitment || "待团队确认"}</DetailBlock></dl>
+              {attachments.length > 0 && <div className="mt-6 border-t border-[#d8e0ee] pt-5"><h3 className="flex items-center gap-2 text-sm font-black text-[#032a72]"><Paperclip className="h-4 w-4" />需求附件（{attachments.length}）</h3><ul className="mt-3 grid gap-2 sm:grid-cols-2">{attachments.map((attachment) => <li key={attachment.url}><a href={attachment.url} download={attachment.name} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-3 border border-[#d8e0ee] bg-[#fafbfd] px-3 py-2.5 hover:border-[#4870ff] hover:bg-[#f2f5ff]"><FileText className="h-4 w-4 shrink-0 text-[#6b7890] group-hover:text-[#4870ff]" /><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-[#34445e]">{attachment.name}</span><span className="block text-[10px] text-[#8491a8]">{formatAttachmentSize(attachment.size)}</span></span><Download className="h-4 w-4 shrink-0 text-[#8491a8] group-hover:text-[#4870ff]" /></a></li>)}</ul></div>}
             </section>
 
             {request.status === "pending_review" && (

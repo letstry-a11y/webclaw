@@ -13,6 +13,7 @@ services:
       ADMIN_PASSWORD: "${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}"
       JWT_SECRET: "${JWT_SECRET:?JWT_SECRET must be set (use a long random string)}"
       SEED_ON_STARTUP: "${SEED_ON_STARTUP:-false}"
+      TZ: "Asia/Shanghai"
     volumes:
       - webclaw-data:/app/data
       - webclaw-uploads:/app/public/uploads
@@ -22,6 +23,23 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+
+  analytics-reporter:
+    image: webclaw:latest
+    container_name: webclaw-analytics
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "file:/app/data/dev.db"
+      ANALYTICS_REPORT_DIR: "/app/访问记录"
+      TZ: "Asia/Shanghai"
+    volumes:
+      - webclaw-data:/app/data
+      - ./访问记录:/app/访问记录
+    depends_on:
+      webclaw:
+        condition: service_healthy
+    entrypoint: ["/usr/bin/tini", "--"]
+    command: ["node", "scripts/weekly-analytics-scheduler.cjs"]
 
 volumes:
   webclaw-data:
