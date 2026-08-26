@@ -58,6 +58,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modul
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 
 COPY --chown=nextjs:nodejs docker/entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
@@ -66,7 +67,7 @@ USER nextjs
 
 EXPOSE 3000
 
-VOLUME ["/app/data", "/app/public/uploads"]
+VOLUME ["/app/data", "/app/public/uploads", "/app/访问记录"]
 
 ENTRYPOINT ["/usr/bin/tini", "--", "./entrypoint.sh"]
 CMD ["node", "server.js"]

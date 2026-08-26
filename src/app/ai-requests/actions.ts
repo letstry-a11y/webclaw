@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { effectCoefficientValues } from "@/lib/ai-project-workflow";
+import { attachmentSchema } from "@/lib/validators";
 import { z } from "zod";
 
 const emailSchema = z.string().trim().email().max(120).transform((value) => value.toLowerCase());
@@ -21,6 +22,14 @@ const requestSchema = z.object({
   expectedDeliverables: z.string().trim().min(3).max(2000),
   targetDate: optionalDate,
   availableResources: z.string().trim().max(2000),
+  attachments: z.string().max(20000).transform((value, context) => {
+    try {
+      return z.array(attachmentSchema).max(5).parse(JSON.parse(value || "[]"));
+    } catch {
+      context.addIssue({ code: "custom", message: "附件信息无效" });
+      return z.NEVER;
+    }
+  }),
   dataSensitivity: z.enum(["public", "internal", "sensitive"]),
   recruitmentRoles: z.string().trim().min(3).max(2000),
   weeklyCommitment: z.string().trim().max(500),
@@ -98,10 +107,12 @@ function recruitmentContent(request: {
 
 export async function createAiRequest(formData: FormData) {
   const data = requestSchema.parse(Object.fromEntries(formData));
+  const { attachments, ...requestData } = data;
   const request = await prisma.aiDemandRequest.create({
     data: {
-      ...data,
-      logs: { create: { action: "需求已提交", actor: data.requesterName, detail: `由 ${data.requesterDepartment} 提交，等待 AI 委员会评审` } },
+      ...requestData,
+      attachments: attachments.length ? JSON.stringify(attachments) : "",
+      logs: { create: { action: "需求已提交", actor: requestData.requesterName, detail: `由 ${requestData.requesterDepartment} 提交，等待 AI 委员会评审` } },
     },
   });
   refreshWorkflow(request.id);
@@ -131,6 +142,7 @@ export async function reviewAndPublish(requestId: string, formData: FormData) {
       eventDate: review.recruitmentDeadline,
       eventLocation: request.requesterDepartment,
       eventLink: `/ai-requests/${requestId}`,
+      attachments: request.attachments,
     };
     const post = request.activityPostId
       ? await tx.post.update({ where: { id: request.activityPostId }, data: postData })
