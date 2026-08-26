@@ -10,7 +10,7 @@ export function getActiveRecruitments(take = 3) {
       recruitmentDeadline: { gte: new Date() },
       activityPost: { is: { isPublished: true } },
     },
-    orderBy: [{ recruitmentDeadline: "asc" }, { updatedAt: "desc" }],
+    orderBy: [{ basePointPool: "desc" }, { recruitmentDeadline: "asc" }, { updatedAt: "desc" }],
     take,
     include: { activityPost: true },
   });
