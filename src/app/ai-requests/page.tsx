@@ -21,7 +21,7 @@ export default async function AiRequestsPage() {
   });
 
   const recruitingCount = requests.filter((request) => request.status === "recruiting").length;
-  const activeCount = requests.filter((request) => ["team_confirmed", "developing", "trial", "delivered_pending_review", "scored_pending_allocation", "allocation_pending_approval", "warranty"].includes(request.status)).length;
+  const activeCount = requests.filter((request) => ["team_confirmed", "developing", "trial", "delivered_pending_review", "scored_pending_allocation", "warranty"].includes(request.status)).length;
 
   return (
     <div className="min-h-full bg-white text-[#111827]">

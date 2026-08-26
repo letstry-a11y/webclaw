@@ -6,7 +6,6 @@ export const requestStatuses = [
   "trial",
   "delivered_pending_review",
   "scored_pending_allocation",
-  "allocation_pending_approval",
   "warranty",
   "completed",
 ] as const;
@@ -21,7 +20,6 @@ export const requestStatusMeta: Record<AiRequestStatus, { label: string; descrip
   trial: { label: "试用评估", description: "产品进入需求方试用与效果验证阶段", tone: "border-[#e9bd71] bg-[#fff7e8] text-[#8a5700]" },
   delivered_pending_review: { label: "待结题评审", description: "成果已交付，等待 AI 委员会确认成效系数", tone: "border-[#ad9fe8] bg-[#f4f0ff] text-[#58409a]" },
   scored_pending_allocation: { label: "待积分分配", description: "委员会已确认成效系数，等待负责人提出个人积分方案", tone: "border-[#ad9fe8] bg-[#f4f0ff] text-[#58409a]" },
-  allocation_pending_approval: { label: "待积分审核", description: "个人积分方案已提交，等待委员会确认", tone: "border-[#e9bd71] bg-[#fff7e8] text-[#8a5700]" },
   warranty: { label: "质保中", description: "首期 70% 积分已发放，剩余积分待质保期结束", tone: "border-[#7dc89a] bg-[#edf9f1] text-[#13743a]" },
   completed: { label: "已结题", description: "项目和质保均已完成，积分已全部发放", tone: "border-[#7dc89a] bg-[#edf9f1] text-[#13743a]" },
 };

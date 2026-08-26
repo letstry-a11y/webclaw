@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import {
-  advanceProjectStage, approvePointAllocation, completeWarranty, confirmTeam,
+  advanceProjectStage, completeWarranty, confirmTeam,
   proposePointAllocation, reviewAndPublish, scoreProject, submitApplication,
   updateApplicationStatus,
 } from "../actions";
@@ -14,7 +14,7 @@ import {
 import {
   ArrowLeft, ArrowRight, Award, Building2, CheckCircle2,
   ClipboardCheck, Clock3, ExternalLink, Mail, Send,
-  ShieldCheck, Target, UserCheck, Users,
+  Target, UserCheck, Users,
 } from "lucide-react";
 import PointAllocationForm from "./PointAllocationForm";
 
@@ -61,7 +61,6 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
   const status = requestStatusMeta[request.status as AiRequestStatus] ?? requestStatusMeta.pending_review;
   const currentIndex = requestStatuses.indexOf(request.status as AiRequestStatus);
   const selectedApplications = request.applications.filter((application) => application.status === "selected");
-  const allocationTotal = request.teamMembers.reduce((sum, member) => sum + (member.allocation?.proposedPoints ?? 0), 0);
   const projectLead = request.teamMembers.find((member) => member.isLead);
 
   return (
@@ -143,10 +142,6 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
 
             {request.status === "scored_pending_allocation" && (
               <PointAllocationForm action={proposePointAllocation.bind(null, id)} members={request.teamMembers.map(({ id: memberId, name, department, email, role, isLead }) => ({ id: memberId, name, department, email, role, isLead }))} finalPointPool={request.finalPointPool!} defaultProposer={projectLead?.name ?? request.project?.owner ?? ""} />
-            )}
-
-            {request.status === "allocation_pending_approval" && (
-              <form action={approvePointAllocation.bind(null, id)} className={`${panelClass} space-y-4`}><div><h2 className="text-2xl font-black">委员会确认积分方案</h2><p className="mt-2 text-sm text-[#6b7890]">确认后立即发放 70% 交付积分，并自动更新 AI 积分榜。</p></div><div className="divide-y divide-[#e2e8f2] border-y border-[#e2e8f2]">{request.teamMembers.map((member) => <div key={member.id} className="flex items-center justify-between py-3 text-sm"><span><strong>{member.name}</strong><small className="ml-2 text-[#6b7890]">{member.role}</small></span><strong className="text-[#032a72]">{member.allocation?.proposedPoints.toLocaleString("zh-CN") ?? 0} 分</strong></div>)}<div className="flex items-center justify-between py-3 text-sm"><strong>合计</strong><strong>{allocationTotal.toLocaleString("zh-CN")} 分</strong></div></div><p className="text-sm leading-6 text-[#52627d]">分配依据：{request.allocationNote}</p><div><label className={labelClass}>委员会确认人</label><input className={fieldClass} name="approvedBy" required maxLength={80} /></div><button className="inline-flex items-center gap-2 bg-[#032a72] px-5 py-3 text-sm font-black text-white"><ShieldCheck className="h-4 w-4" />确认方案并发放 70% 积分</button></form>
             )}
 
             {request.status === "warranty" && (
