@@ -113,7 +113,7 @@ function MemberFields({ member }: {
       </div>
       <div className="grid gap-3 sm:grid-cols-4">
         <div>
-          <label className={labelClass}>委员会确认等级</label>
+          <label className={labelClass}>AI发展委员会确认等级</label>
           <select className={fieldClass} name="level" defaultValue={member?.level ?? "L1"}>
             {levels.map((level) => <option key={level.code} value={level.code}>{level.code} · {level.name}</option>)}
           </select>
@@ -154,7 +154,7 @@ export default async function AiPointsPage({ searchParams }: { searchParams: Pro
             <div>
               <div className="mb-3 flex items-center gap-2 font-mono text-[11px] tracking-[0.2em] text-[#b8c6ff]"><Trophy className="h-4 w-4" /> MEDBOT AI POINTS</div>
               <h1 className="text-4xl font-black tracking-[-0.04em] sm:text-6xl">AI 积分排名榜</h1>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-white/70 sm:text-base">公开展示员工在 AI 应用项目中的历史贡献、委员会认定等级和积分变更记录。</p>
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-white/70 sm:text-base">公开展示员工在 AI 应用项目中的历史贡献、AI发展委员会认定等级和积分变更记录。</p>
             </div>
             <details className="group relative">
               <summary className="flex cursor-pointer list-none items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white hover:bg-[#5b80ff]"><Plus className="h-4 w-4" /> 新增积分成员</summary>
@@ -231,7 +231,7 @@ export default async function AiPointsPage({ searchParams }: { searchParams: Pro
           ) : (
             <div className="border border-dashed border-[#cbd5e6] bg-[#fafbfd] py-16 text-center">
               <Medal className="mx-auto h-10 w-10 text-[#4870ff]" />
-              <h3 className="mt-4 text-xl font-black">积分数据待委员会公示</h3>
+              <h3 className="mt-4 text-xl font-black">积分数据待AI发展委员会公示</h3>
               <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#6b7890]">当前不展示虚构排名。首批人员及积分确认后，可通过本页“新增积分成员”和“登记积分变动”直接公开录入。</p>
             </div>
           )}
@@ -247,7 +247,7 @@ export default async function AiPointsPage({ searchParams }: { searchParams: Pro
               </article>
             ))}
           </div>
-          <div className="mt-5 flex items-start gap-3 border-l-4 border-[#4870ff] bg-[#eef3fb] p-4 text-sm leading-6 text-[#34445e]"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#032a72]" /><p><strong>口径说明：</strong>历史累计积分用于排名和等级认定，兑换后不扣减；当前可用积分用于按 1:1 兑换 Token、VPN 或其他 AI 工具费用。等级由 AI 发展委员会结合积分与项目经历确认。</p></div>
+          <div className="mt-5 flex items-start gap-3 border-l-4 border-[#4870ff] bg-[#eef3fb] p-4 text-sm leading-6 text-[#34445e]"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#032a72]" /><p><strong>口径说明：</strong>历史累计积分用于排名和等级认定，兑换后不扣减；当前可用积分用于按 1:1 兑换 Token、VPN 或其他 AI 工具费用。等级由 AI发展委员会结合积分与项目经历确认。</p></div>
         </section>
       </main>
     </div>

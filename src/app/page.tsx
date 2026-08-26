@@ -73,7 +73,7 @@ function AiPointsLeaderboardCard({ members }: { members: Array<{ id: string; nam
             ))}
           </ol>
         ) : (
-          <div className="border-l-2 border-[#4870ff] pl-3"><p className="text-sm font-bold text-white">积分数据待委员会公示</p><p className="mt-1 text-xs leading-5 text-white/55">首批名单确认后，将按历史累计积分公开排名。</p></div>
+          <div className="border-l-2 border-[#4870ff] pl-3"><p className="text-sm font-bold text-white">积分数据待AI发展委员会公示</p><p className="mt-1 text-xs leading-5 text-white/55">首批名单确认后，将按历史累计积分公开排名。</p></div>
         )}
       </div>
 

@@ -90,7 +90,7 @@ function recruitmentContent(request: {
   return `
 <div style="border-left:5px solid #4870ff;background:#eef3fb;padding:18px 20px;margin-bottom:28px">
   <p style="margin:0 0 8px"><strong>AI 项目公开招募</strong></p>
-  <p style="margin:0">该需求已经 AI 委员会评审，项目等级为 ${review.projectLevel} 级，基础积分总包为 ${review.basePointPool.toLocaleString("zh-CN")} 分。团队确认后将自动进入 AI 项目看板。</p>
+  <p style="margin:0">该需求已经 AI发展委员会评审，项目等级为 ${review.projectLevel} 级，基础积分总包为 ${review.basePointPool.toLocaleString("zh-CN")} 分。团队确认后将自动进入 AI 项目看板。</p>
 </div>
 <h2>需求背景</h2><p>${escapeHtml(request.background)}</p>
 <h2>当前问题</h2><p>${escapeHtml(request.currentProblem)}</p>
@@ -101,7 +101,7 @@ function recruitmentContent(request: {
 <h2>时间投入</h2><p>${escapeHtml(request.weeklyCommitment || "以项目团队确认结果为准")}</p>
 <h2>需求方与联系方式</h2>
 <p><strong>需求部门：</strong>${escapeHtml(request.requesterDepartment)}<br /><strong>需求方：</strong>${escapeHtml(request.requesterName)}<br /><strong>企业邮箱：</strong><a href="mailto:${escapeHtml(request.requesterEmail)}">${escapeHtml(request.requesterEmail)}</a></p>
-<blockquote><strong>积分说明：</strong>最终项目总积分 = 基础积分总包 × 结题成效系数。个人积分根据实际贡献提出分配方案，并经 AI 委员会确认后发放。</blockquote>
+<blockquote><strong>积分说明：</strong>最终项目总积分 = 基础积分总包 × 结题成效系数。个人积分根据实际贡献提出分配方案，并经 AI发展委员会确认后发放。</blockquote>
 `;
 }
 
@@ -112,7 +112,7 @@ export async function createAiRequest(formData: FormData) {
     data: {
       ...requestData,
       attachments: attachments.length ? JSON.stringify(attachments) : "",
-      logs: { create: { action: "需求已提交", actor: requestData.requesterName, detail: `由 ${requestData.requesterDepartment} 提交，等待 AI 委员会评审` } },
+      logs: { create: { action: "需求已提交", actor: requestData.requesterName, detail: `由 ${requestData.requesterDepartment} 提交，等待 AI发展委员会评审` } },
     },
   });
   refreshWorkflow(request.id);
@@ -133,11 +133,11 @@ export async function reviewAndPublish(requestId: string, formData: FormData) {
     const postData = {
       title: `AI 项目招募｜${request.title}`,
       content: recruitmentContent(request, review),
-      excerpt: `${request.requesterDepartment} 发起 AI 应用需求，委员会核定为 ${review.projectLevel} 级项目，基础积分总包 ${review.basePointPool.toLocaleString("zh-CN")} 分，现公开招募团队成员。`,
+      excerpt: `${request.requesterDepartment} 发起 AI 应用需求，AI发展委员会核定为 ${review.projectLevel} 级项目，基础积分总包 ${review.basePointPool.toLocaleString("zh-CN")} 分，现公开招募团队成员。`,
       type: "activity",
       category: "ai-recruitment",
       tags: "AI项目招募,AI积分,内部创新,团队协作",
-      authorName: `${request.requesterDepartment} × AI 发展委员会`,
+      authorName: `${request.requesterDepartment} × AI发展委员会`,
       isPublished: true,
       eventDate: review.recruitmentDeadline,
       eventLocation: request.requesterDepartment,
@@ -153,7 +153,7 @@ export async function reviewAndPublish(requestId: string, formData: FormData) {
       data: { ...review, status: "recruiting", reviewedAt: new Date(), activityPostId: post.id },
     });
     await tx.aiWorkflowLog.create({
-      data: { requestId, action: "委员会评审通过并发布招募", actor: review.reviewedBy, detail: `${review.projectLevel} 级项目，基础积分总包 ${review.basePointPool} 分` },
+      data: { requestId, action: "AI发展委员会评审通过并发布招募", actor: review.reviewedBy, detail: `${review.projectLevel} 级项目，基础积分总包 ${review.basePointPool} 分` },
     });
   });
   refreshWorkflow(requestId);
@@ -236,7 +236,7 @@ export async function confirmTeam(requestId: string, formData: FormData) {
 const transitions = {
   developing: { from: "team_confirmed", projectStatus: "developing", action: "项目进入开发阶段" },
   trial: { from: "developing", projectStatus: "evaluating", action: "项目进入试用评估" },
-  delivered_pending_review: { from: "trial", projectStatus: "delivered", action: "项目已交付，等待委员会结题评审" },
+  delivered_pending_review: { from: "trial", projectStatus: "delivered", action: "项目已交付，等待AI发展委员会结题评审" },
 } as const;
 
 export async function advanceProjectStage(requestId: string, targetStatus: string, formData: FormData) {
@@ -305,7 +305,7 @@ export async function scoreProject(requestId: string, formData: FormData) {
     await tx.aiWorkflowLog.create({
       data: {
         requestId,
-        action: "委员会确认结题成效系数",
+        action: "AI发展委员会确认结题成效系数",
         actor: data.reviewedBy,
         detail: `主要负责人 ${data.leadName}，成效系数 ${data.effectCoefficient}，最终积分 ${finalPointPool}`,
       },

@@ -7,15 +7,15 @@ import { ArrowRight, Building2, CalendarClock, CheckCircle2, CircleDollarSign, C
 
 export const metadata: Metadata = {
   title: "AI 项目需求与招募 - Medbot",
-  description: "提交 AI 应用需求，经委员会评审、公开招募、组队交付并进入积分榜",
+  description: "提交 AI 应用需求，经AI发展委员会评审、公开招募、组队交付并进入积分榜",
 };
 export const dynamic = "force-dynamic";
 
 const processGroups = [
-  { key: "pending-review", title: "待委员会评审", description: "新需求等待确认项目等级与基础积分总包", statuses: ["pending_review"], icon: ClipboardList, accent: "border-l-[#d49a32]", iconTone: "bg-[#fff4df] text-[#8a5700]" },
+  { key: "pending-review", title: "待AI发展委员会评审", description: "新需求等待确认项目等级与基础积分总包", statuses: ["pending_review"], icon: ClipboardList, accent: "border-l-[#d49a32]", iconTone: "bg-[#fff4df] text-[#8a5700]" },
   { key: "recruiting", title: "社区招募中", description: "需求已通过评审，正在公开征集团队成员", statuses: ["recruiting"], icon: Users, accent: "border-l-[#4870ff]", iconTone: "bg-[#eef2ff] text-[#032a72]" },
   { key: "executing", title: "项目执行中", description: "包含团队确认、开发和试用评估阶段", statuses: ["team_confirmed", "developing", "trial"], icon: Sparkles, accent: "border-l-[#2f7bc1]", iconTone: "bg-[#edf5ff] text-[#14569b]" },
-  { key: "closing-review", title: "待结题评审", description: "成果已交付，等待 AI 委员会确认成效系数", statuses: ["delivered_pending_review"], icon: ClipboardCheck, accent: "border-l-[#7961c5]", iconTone: "bg-[#f4f0ff] text-[#58409a]" },
+  { key: "closing-review", title: "待结题评审", description: "成果已交付，等待 AI发展委员会确认成效系数", statuses: ["delivered_pending_review"], icon: ClipboardCheck, accent: "border-l-[#7961c5]", iconTone: "bg-[#f4f0ff] text-[#58409a]" },
   { key: "point-allocation", title: "待积分分配", description: "成效系数已确定，等待项目负责人分配个人积分", statuses: ["scored_pending_allocation"], icon: CircleDollarSign, accent: "border-l-[#9b6ac7]", iconTone: "bg-[#f7f0fb] text-[#65407e]" },
   { key: "warranty", title: "质保中", description: "首期积分已发放，等待质保结束并发放剩余积分", statuses: ["warranty"], icon: ShieldCheck, accent: "border-l-[#35a762]", iconTone: "bg-[#edf9f1] text-[#13743a]" },
   { key: "completed", title: "已结题", description: "项目、质保和积分发放均已完成", statuses: ["completed"], icon: CheckCircle2, accent: "border-l-[#1d7e47]", iconTone: "bg-[#e7f7ed] text-[#116333]" },
@@ -40,7 +40,7 @@ export default async function AiRequestsPage() {
             <div>
               <div className="mb-3 flex items-center gap-2 font-mono text-[11px] tracking-[0.2em] text-[#b8c6ff]"><ClipboardList className="h-4 w-4" /> AI PROJECT INTAKE</div>
               <h1 className="text-4xl font-black tracking-[-0.04em] sm:text-6xl">AI 项目需求与招募</h1>
-              <p className="mt-4 max-w-3xl text-sm leading-7 text-white/70 sm:text-base">需求从这里开始，经 AI 委员会评审后进入社区招募；团队确认后自动进入看板，委员会确定成效系数后由项目负责人完成积分分配。</p>
+              <p className="mt-4 max-w-3xl text-sm leading-7 text-white/70 sm:text-base">需求从这里开始，经 AI发展委员会评审后进入社区招募；团队确认后自动进入看板，AI发展委员会确定成效系数后由项目负责人完成积分分配。</p>
             </div>
             <details className="group relative">
               <summary className="flex cursor-pointer list-none items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white hover:bg-[#5b80ff]"><Plus className="h-4 w-4" /> 提交 AI 应用需求</summary>
