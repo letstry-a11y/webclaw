@@ -89,17 +89,14 @@ export default async function ActivityPage({ params }: Props) {
                 {post.eventLocation}
               </span>
             )}
-            {post.eventLink && (
-              <a
-                href={post.eventLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-primary hover:underline"
-              >
+            {post.eventLink && (post.eventLink.startsWith("/") ? (
+              <Link href={post.eventLink} className="flex items-center gap-1.5 text-primary hover:underline">
                 <ExternalLink className="w-4 h-4" />
-                活动链接
-              </a>
-            )}
+                {post.category === "ai-recruitment" ? "查看详情并报名" : "活动链接"}
+              </Link>
+            ) : (
+              <a href={post.eventLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary hover:underline"><ExternalLink className="w-4 h-4" />活动链接</a>
+            ))}
           </div>
 
           {tags.length > 0 && (
