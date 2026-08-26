@@ -19,6 +19,7 @@ function RecruitmentCard({ recruitment, featured = false }: { recruitment: Activ
       <div className={`relative mt-auto w-full ${featured ? "p-6 sm:p-8" : "p-5"}`}>
         <div className="flex flex-wrap items-center gap-2 text-[10px] font-black">
           <span className="bg-[#4870ff] px-2.5 py-1">正在招募</span>
+          {featured && <span className="bg-white px-2.5 py-1 text-[#032a72]">最高积分项目</span>}
           <span className="border border-white/25 bg-[#01183f]/55 px-2.5 py-1">{recruitment.projectLevel ? `${recruitment.projectLevel} 级项目` : "AI 项目"}</span>
         </div>
         <h3 className={`mt-3 font-black leading-tight tracking-[-0.025em] ${featured ? "text-2xl sm:text-4xl" : "text-xl"}`}>{recruitment.title}</h3>
@@ -36,6 +37,14 @@ function RecruitmentCard({ recruitment, featured = false }: { recruitment: Activ
 
 export default function RecruitmentSpotlight({ recruitments, compact = false }: { recruitments: ActiveRecruitment[]; compact?: boolean }) {
   if (recruitments.length === 0) return null;
+  const sortedRecruitments = [...recruitments].sort((left, right) => {
+    const pointDifference = (right.basePointPool ?? -1) - (left.basePointPool ?? -1);
+    if (pointDifference !== 0) return pointDifference;
+    const leftDeadline = left.recruitmentDeadline?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    const rightDeadline = right.recruitmentDeadline?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    return leftDeadline - rightDeadline;
+  });
+
   return (
     <section className={compact ? "" : "border-b border-[#cbd5e6] bg-[#eef3fb] py-9 sm:py-11"} aria-label="AI 项目正在招募">
       <div className={compact ? "" : "mx-auto max-w-7xl px-4 sm:px-6"}>
@@ -43,13 +52,13 @@ export default function RecruitmentSpotlight({ recruitments, compact = false }: 
           <div>
             <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] text-[#032a72]"><Users className="h-4 w-4" /> NOW RECRUITING</div>
             <h2 className="mt-2 text-3xl font-black tracking-[-0.035em] text-[#111827] sm:text-4xl">AI 项目正在招募</h2>
-            <p className="mt-2 text-sm text-[#52627d]">加入真实业务项目，协作交付成果并获得 AI 积分。</p>
+            <p className="mt-2 text-sm text-[#52627d]">按基础积分从高到低展示，加入真实业务项目并协作交付成果。</p>
           </div>
           <Link href="/ai-requests" className="inline-flex items-center gap-1 text-sm font-black text-[#032a72]">查看全部项目 <ArrowRight className="h-4 w-4 text-[#4870ff]" /></Link>
         </div>
-        <div className={recruitments.length === 1 ? "grid" : "grid gap-3 lg:grid-cols-[1.65fr_0.85fr]"}>
-          <RecruitmentCard recruitment={recruitments[0]} featured />
-          {recruitments.length > 1 && <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">{recruitments.slice(1, 3).map((recruitment) => <RecruitmentCard key={recruitment.id} recruitment={recruitment} />)}</div>}
+        <div className={sortedRecruitments.length === 1 ? "grid" : "grid gap-3 lg:grid-cols-[1.65fr_0.85fr]"}>
+          <RecruitmentCard recruitment={sortedRecruitments[0]} featured />
+          {sortedRecruitments.length > 1 && <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">{sortedRecruitments.slice(1, 3).map((recruitment) => <RecruitmentCard key={recruitment.id} recruitment={recruitment} />)}</div>}
         </div>
       </div>
     </section>
