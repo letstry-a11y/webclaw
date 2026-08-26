@@ -2,6 +2,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { ArrowRight, CalendarDays, Medal, PenSquare, Sparkles } from "lucide-react";
 import type { Post } from "@prisma/client";
+import RecruitmentSpotlight from "@/components/ai/RecruitmentSpotlight";
+import { getActiveRecruitments } from "@/lib/ai-recruitment";
 
 export const dynamic = "force-dynamic";
 
@@ -109,7 +111,7 @@ function SectionHeader({ title, href, linkText }: { title: string; href: string;
 }
 
 export default async function HomePage() {
-  const [policyPost, featuredPosts, recentStories, latestPosts, activities, topPointMembers] = await Promise.all([
+  const [policyPost, featuredPosts, recentStories, latestPosts, activities, topPointMembers, activeRecruitments] = await Promise.all([
     prisma.post.findUnique({ where: { slug: "ai-application-project-incentive-policy", isPublished: true } }),
     prisma.post.findMany({
       where: { isPublished: true, OR: [{ isPinned: true }, { isFeatured: true }] },
@@ -125,17 +127,21 @@ export default async function HomePage() {
     }),
     prisma.post.findMany({
       where: { isPublished: true, type: "activity" },
-      orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }], take: 3,
+      orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }], take: 8,
     }),
     prisma.aiPointMember.findMany({
       orderBy: [{ historicalPoints: "desc" }, { updatedAt: "asc" }],
       take: 3,
       select: { id: true, name: true, level: true, historicalPoints: true },
     }),
+    getActiveRecruitments(3),
   ]);
 
-  const fallbackPosts = [...latestPosts, ...activities];
-  const spotlightSeed = policyPost ? [policyPost, ...featuredPosts.filter((post) => post.id !== policyPost.id)] : featuredPosts;
+  const activeRecruitmentPostIds = new Set(activeRecruitments.map((request) => request.activityPostId).filter(Boolean));
+  const otherActivities = activities.filter((post) => !activeRecruitmentPostIds.has(post.id));
+  const featuredWithoutRecruitment = featuredPosts.filter((post) => !activeRecruitmentPostIds.has(post.id));
+  const fallbackPosts = [...latestPosts, ...otherActivities];
+  const spotlightSeed = policyPost ? [policyPost, ...featuredWithoutRecruitment.filter((post) => post.id !== policyPost.id)] : featuredWithoutRecruitment;
   const spotlight = [...spotlightSeed, ...fallbackPosts.filter((post) => !spotlightSeed.some((featured) => featured.id === post.id))].slice(0, 3);
   const primaryPosts = latestPosts.length > 0 ? latestPosts : spotlight;
   const storyGridClass = recentStories.length === 1
@@ -153,6 +159,7 @@ export default async function HomePage() {
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </Link>
       )}
+      <RecruitmentSpotlight recruitments={activeRecruitments} />
       {spotlight.length > 0 && (
         <section className="grid border-b border-[#032a72] bg-[#032a72] md:grid-cols-3" aria-label="焦点内容">
           <div className="md:col-span-2 md:border-r md:border-white/20"><FeatureCard post={spotlight[0]} size="large" /></div>
@@ -195,13 +202,13 @@ export default async function HomePage() {
           </section>
         )}
 
-        {activities.length > 0 && (
+        {otherActivities.length > 0 && (
           <section className="mb-16">
             <SectionHeader title="社区活动" href="/activities" linkText="更多活动" />
             <div className="grid gap-6 lg:grid-cols-[1.75fr_0.85fr]">
-              <NewsCard post={activities[0]} large />
+              <NewsCard post={otherActivities[0]} large />
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-1">
-                {activities.slice(1, 3).map((post) => <NewsCard key={post.id} post={post} />)}
+                {otherActivities.slice(1, 3).map((post) => <NewsCard key={post.id} post={post} />)}
                 <Link href="/activities" className="group flex min-h-[180px] flex-col justify-between border border-[#d6deed] bg-[#f3f6fb] p-6 hover:border-[#4870ff]">
                   <CalendarDays className="h-7 w-7 text-[#032a72]" />
                   <div><p className="text-xl font-black">发现更多社区活动</p><span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-[#032a72]">查看活动日历 <ArrowRight className="h-4 w-4" /></span></div>
