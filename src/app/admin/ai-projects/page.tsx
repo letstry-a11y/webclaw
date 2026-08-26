@@ -1,8 +1,9 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import Link from "next/link";
 import {
-  BrainCircuit, CalendarClock, ChevronDown, CircleDot, Pencil, Plus,
+  BrainCircuit, CalendarClock, ChevronDown, CircleDot, ClipboardPlus, Pencil,
   Rocket, Search, ShoppingCart, Smartphone, Users,
 } from "lucide-react";
 
@@ -14,11 +15,12 @@ const projectSchema = z.object({
   businessImpact: z.string().trim().max(500),
   owner: z.string().trim().max(120),
   releasePlan: z.string().trim().max(120),
-  status: z.enum(["planning", "evaluating", "delivered", "launched"]),
+  status: z.enum(["planning", "developing", "evaluating", "delivered", "launched"]),
 });
 
 const statusMeta = {
   planning: { label: "规划中", className: "border-[#cbd5e6] bg-[#f3f6fb] text-[#52627d]" },
+  developing: { label: "开发中", className: "border-[#7aa5dc] bg-[#edf5ff] text-[#14569b]" },
   evaluating: { label: "试用评估", className: "border-[#e9bd71] bg-[#fff7e8] text-[#8a5700]" },
   delivered: { label: "已交付", className: "border-[#9fb2f7] bg-[#eef2ff] text-[#032a72]" },
   launched: { label: "已上线", className: "border-[#7dc89a] bg-[#edf9f1] text-[#13743a]" },
@@ -43,14 +45,6 @@ function refreshDashboard() {
   revalidatePath("/admin/ai-projects");
 }
 
-async function createProject(formData: FormData) {
-  "use server";
-  const project = projectFromForm(formData);
-  const lastProject = await prisma.aiProject.findFirst({ orderBy: { order: "desc" }, select: { order: true } });
-  await prisma.aiProject.create({ data: { ...project, order: (lastProject?.order ?? 0) + 1 } });
-  refreshDashboard();
-}
-
 async function updateProject(projectId: string, formData: FormData) {
   "use server";
   await prisma.aiProject.update({ where: { id: projectId }, data: projectFromForm(formData) });
@@ -73,6 +67,7 @@ function ProjectFields({ project }: {
         <label className={labelClass}>产品状态</label>
         <select className={fieldClass} name="status" defaultValue={project?.status ?? "planning"}>
           <option value="planning">规划中</option>
+          <option value="developing">开发中</option>
           <option value="evaluating">试用评估</option>
           <option value="delivered">已交付</option>
           <option value="launched">已上线</option>
@@ -106,15 +101,7 @@ export default async function AiProjectsDashboard() {
               <div className="border-r border-[#d8e0ee] px-4 py-2.5"><span className="text-[#6b7890]">已发布</span><strong className="ml-2 text-lg text-[#13743a]">{releasedCount}</strong></div>
               <div className="px-4 py-2.5"><span className="text-[#6b7890]">探索中</span><strong className="ml-2 text-lg text-[#8a5700]">{exploringCount}</strong></div>
             </div>
-            <details className="group relative">
-              <summary className="flex cursor-pointer list-none items-center gap-2 bg-primary px-4 py-3 text-sm font-bold text-white hover:bg-primary-hover">
-                <Plus className="h-4 w-4" /> 新增产品
-              </summary>
-              <form action={createProject} className="absolute right-0 z-30 mt-2 w-[min(90vw,520px)] space-y-4 border border-[#d8e0ee] bg-white p-5 shadow-2xl">
-                <ProjectFields />
-                <button className="w-full bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-hover" type="submit">创建产品</button>
-              </form>
-            </details>
+            <Link href="/ai-requests" className="flex items-center gap-2 bg-primary px-4 py-3 text-sm font-bold text-white hover:bg-primary-hover"><ClipboardPlus className="h-4 w-4" />提交 AI 需求</Link>
           </div>
         </div>
       </header>
@@ -135,6 +122,7 @@ export default async function AiProjectsDashboard() {
                 </div>
 
                 <h2 className="mt-4 text-xl font-bold tracking-tight text-[#111827]">{project.name}</h2>
+                {project.requestId && <Link href={`/ai-requests/${project.requestId}`} className="mt-2 inline-flex items-center text-xs font-bold text-[#032a72] hover:underline">查看需求、团队与积分流程</Link>}
 
                 <dl className="mt-4 space-y-3 text-sm">
                   <div>
@@ -170,7 +158,7 @@ export default async function AiProjectsDashboard() {
         <div className="border border-dashed border-[#cbd5e6] py-16 text-center">
           <BrainCircuit className="mx-auto h-8 w-8 text-[#032a72]" />
           <h2 className="mt-4 text-lg font-bold">还没有 AI 产品</h2>
-          <p className="mt-2 text-sm text-[#52627d]">点击右上角“新增产品”开始建立公开产品看板。</p>
+          <p className="mt-2 text-sm text-[#52627d]">请先提交 AI 应用需求；评审、招募并确认团队后，项目会自动进入这里。</p>
         </div>
       )}
     </div>

@@ -34,6 +34,8 @@ model Post {
   eventDate     DateTime?
   eventLocation String?
   eventLink     String?
+
+  aiRecruitment AiDemandRequest?
 }
 
 model Comment {
@@ -79,9 +81,11 @@ model AiProject {
   order          Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  requestId      String?  @unique
 
   progress AiProjectProgress[]
   actions  AiActionItem[]
+  request  AiDemandRequest?    @relation(fields: [requestId], references: [id], onDelete: SetNull)
 }
 
 model AiProjectProgress {
@@ -109,6 +113,7 @@ model AiActionItem {
 model AiPointMember {
   id                 String   @id @default(cuid())
   name               String
+  email              String?  @unique
   department         String   @default("")
   level              String   @default("L1")
   historicalPoints   Int      @default(0)
@@ -138,4 +143,120 @@ model AiPointEntry {
   member AiPointMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
   @@index([memberId, createdAt])
+}
+
+model AiDemandRequest {
+  id                   String    @id @default(cuid())
+  title                String
+  requesterName        String
+  requesterDepartment  String
+  requesterEmail       String
+  background           String
+  currentProblem       String
+  desiredFunctions     String
+  businessValue        String
+  expectedDeliverables String
+  targetDate           DateTime?
+  availableResources   String    @default("")
+  dataSensitivity      String    @default("internal")
+  recruitmentRoles     String    @default("")
+  weeklyCommitment     String    @default("")
+  status               String    @default("pending_review")
+  projectLevel         Int?
+  basePointPool        Int?
+  reviewComment        String    @default("")
+  reviewedBy           String    @default("")
+  reviewedAt           DateTime?
+  recruitmentDeadline  DateTime?
+  plannedTeamSize      Int       @default(0)
+  warrantyMonths       Int       @default(3)
+  activityPostId       String?   @unique
+  score                Int?
+  effectCoefficient    Float?
+  finalPointPool       Int?
+  allocationNote       String    @default("")
+  pointsApprovedBy     String    @default("")
+  pointsApprovedAt     DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  activityPost Post?                      @relation(fields: [activityPostId], references: [id], onDelete: SetNull)
+  project      AiProject?
+  applications AiProjectApplication[]
+  teamMembers  AiProjectTeamMember[]
+  allocations  AiProjectPointAllocation[]
+  logs         AiWorkflowLog[]
+
+  @@index([status, createdAt])
+  @@index([requesterEmail])
+}
+
+model AiProjectApplication {
+  id                 String   @id @default(cuid())
+  requestId          String
+  name               String
+  department         String
+  email              String
+  intendedRole       String
+  skills             String
+  weeklyAvailability String
+  statement          String   @default("")
+  status             String   @default("pending")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  request    AiDemandRequest      @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  teamMember AiProjectTeamMember?
+
+  @@unique([requestId, email])
+  @@index([requestId, status])
+}
+
+model AiProjectTeamMember {
+  id             String   @id @default(cuid())
+  requestId      String
+  applicationId  String?  @unique
+  name           String
+  department     String
+  email          String
+  role           String
+  responsibility String   @default("")
+  isLead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  request     AiDemandRequest           @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  application AiProjectApplication?     @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  allocation  AiProjectPointAllocation?
+
+  @@unique([requestId, email])
+  @@index([requestId, isLead])
+}
+
+model AiProjectPointAllocation {
+  id             String   @id @default(cuid())
+  requestId      String
+  teamMemberId   String   @unique
+  proposedPoints Int
+  issuedPoints   Int      @default(0)
+  warrantyPoints Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  request    AiDemandRequest     @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  teamMember AiProjectTeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+}
+
+model AiWorkflowLog {
+  id        String   @id @default(cuid())
+  requestId String
+  action    String
+  actor     String
+  detail    String   @default("")
+  createdAt DateTime @default(now())
+
+  request AiDemandRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, createdAt])
 }

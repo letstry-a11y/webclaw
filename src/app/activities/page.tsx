@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import PostCard from "@/components/post/PostCard";
 import { Calendar } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "活动 - Medbot",
@@ -18,9 +20,9 @@ export default async function ActivitiesPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-      <div className="flex items-center gap-3 mb-6">
-        <Calendar className="w-6 h-6 text-primary" />
-        <h1 className="text-2xl font-bold text-text-primary">社区活动</h1>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3"><Calendar className="w-6 h-6 text-primary" /><h1 className="text-2xl font-bold text-text-primary">社区活动</h1></div>
+        <Link href="/ai-requests" className="inline-flex items-center gap-2 bg-[#4870ff] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#5b80ff]"><Plus className="h-4 w-4" />提交 AI 项目需求</Link>
       </div>
 
       {activities.length === 0 ? (
