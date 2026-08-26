@@ -8,25 +8,25 @@ datasource db {
 }
 
 model Post {
-  id          String    @id @default(cuid())
-  title       String
-  slug        String    @unique
-  content     String
-  excerpt     String
-  coverImage  String?
-  type        String    @default("blog") // "blog" | "activity"
-  category    String    @default("general")
-  tags        String    @default("")
-  authorName  String    @default("匿名用户")
-  authorFingerprint String @default("")
-  isPinned    Boolean   @default(false)
-  isFeatured  Boolean   @default(false)
-  isPublished Boolean   @default(true)
-  viewCount   Int       @default(0)
-  likeCount   Int       @default(0)
-  attachments String    @default("")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id                String   @id @default(cuid())
+  title             String
+  slug              String   @unique
+  content           String
+  excerpt           String
+  coverImage        String?
+  type              String   @default("blog") // "blog" | "activity"
+  category          String   @default("general")
+  tags              String   @default("")
+  authorName        String   @default("匿名用户")
+  authorFingerprint String   @default("")
+  isPinned          Boolean  @default(false)
+  isFeatured        Boolean  @default(false)
+  isPublished       Boolean  @default(true)
+  viewCount         Int      @default(0)
+  likeCount         Int      @default(0)
+  attachments       String   @default("")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   comments Comment[]
   likes    Like[]
@@ -69,13 +69,16 @@ model Category {
 }
 
 model AiProject {
-  id        String   @id @default(cuid())
-  name      String
-  subtitle  String   @default("")
-  status    String   @default("planning")
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  subtitle       String   @default("")
+  businessImpact String   @default("")
+  owner          String   @default("")
+  releasePlan    String   @default("")
+  status         String   @default("planning")
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   progress AiProjectProgress[]
   actions  AiActionItem[]
@@ -101,4 +104,38 @@ model AiActionItem {
   updatedAt   DateTime @updatedAt
 
   project AiProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model AiPointMember {
+  id                 String   @id @default(cuid())
+  name               String
+  department         String   @default("")
+  level              String   @default("L1")
+  historicalPoints   Int      @default(0)
+  availablePoints    Int      @default(0)
+  completedProjects  Int      @default(0)
+  ledProjects        Int      @default(0)
+  highImpactProjects Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  entries AiPointEntry[]
+
+  @@index([historicalPoints])
+  @@index([level])
+}
+
+model AiPointEntry {
+  id              String   @id @default(cuid())
+  memberId        String
+  historicalDelta Int      @default(0)
+  availableDelta  Int      @default(0)
+  reason          String
+  projectName     String   @default("")
+  operatorName    String   @default("公开登记")
+  createdAt       DateTime @default(now())
+
+  member AiPointMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId, createdAt])
 }

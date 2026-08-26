@@ -121,7 +121,7 @@ export default async function PostPage({ params }: Props) {
                 <Link
                   key={tag}
                   href={`/tags/${encodeURIComponent(tag)}`}
-                  className="px-3 py-1 text-xs bg-tag-bg text-tag-text border border-border hover:bg-primary hover:text-black transition-colors"
+                  className="px-3 py-1 text-xs bg-tag-bg text-tag-text border border-border hover:bg-primary hover:text-white transition-colors"
                 >
                   {tag}
                 </Link>
@@ -145,7 +145,7 @@ export default async function PostPage({ params }: Props) {
 
         {/* Attachments */}
         {attachments.length > 0 && (
-          <div className="mb-8 bg-[#111411] border border-border p-5 sm:p-6">
+          <div className="mb-8 bg-bg-card border border-border p-5 sm:p-6">
             <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary mb-4">
               <Paperclip className="w-4 h-4 text-primary" />
               附件 ({attachments.length})

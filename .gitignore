@@ -46,6 +46,8 @@ next-env.d.ts
 # local working artifacts
 /tmp/
 /AI应用项目激励办法.pdf
+/linkedin+商机系统架构.html
+/My_MedBot_Quick_User_Guide_EN(1)*.pptx
 
 # uploaded files
 /public/uploads/

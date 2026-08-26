@@ -108,7 +108,7 @@ export default async function ActivityPage({ params }: Props) {
                 <Link
                   key={tag}
                   href={`/tags/${encodeURIComponent(tag)}`}
-                  className="px-3 py-1 text-xs bg-tag-bg text-tag-text border border-border hover:bg-primary hover:text-black transition-colors"
+                  className="px-3 py-1 text-xs bg-tag-bg text-tag-text border border-border hover:bg-primary hover:text-white transition-colors"
                 >
                   {tag}
                 </Link>

@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const sourceHanSans = localFont({
+  variable: "--font-source-han-sans",
+  display: "swap",
+  src: [
+    { path: "./fonts/SourceHanSansCN-Normal.woff", weight: "400", style: "normal" },
+    { path: "./fonts/SourceHanSansCN-Bold.woff", weight: "700 900", style: "normal" },
+  ],
 });
 
 export const metadata: Metadata = {
@@ -25,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="zh-CN" className={sourceHanSans.variable}>
       <body className="min-h-screen flex flex-col bg-bg text-text-primary antialiased">
         <Navbar />
         <main className="flex-1">{children}</main>

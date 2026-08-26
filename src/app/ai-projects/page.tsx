@@ -3,7 +3,7 @@ import AiProjectsDashboard from "@/app/admin/ai-projects/page";
 
 export const metadata: Metadata = {
   title: "AI 应用项目看板 - Medbot",
-  description: "公司内部 AI 产品进展、负责人及行动项公开看板",
+  description: "公司内部 AI 产品功能、业务价值与发布时间公开看板",
 };
 
 export const dynamic = "force-dynamic";

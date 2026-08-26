@@ -16,7 +16,7 @@ export default async function AdminLayout({
         <div className="flex gap-6">
           {/* Sidebar */}
           <aside className="hidden md:block w-56 shrink-0">
-            <nav className="bg-[#111411] border border-border p-4 sticky top-24 space-y-1">
+            <nav className="bg-bg-card border border-border p-4 sticky top-24 space-y-1">
               <Link href="/admin" className="flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:text-primary hover:bg-primary-light rounded-lg transition-colors">
                 <LayoutDashboard className="w-4 h-4" /> 仪表盘
               </Link>

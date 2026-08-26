@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "AiProject" ADD COLUMN "businessImpact" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "AiProject" ADD COLUMN "owner" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "AiProject" ADD COLUMN "releasePlan" TEXT NOT NULL DEFAULT '';

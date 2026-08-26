@@ -12,7 +12,7 @@ export default function PostCard({ post }: PostCardProps) {
   const tags = post.tags.split(",").filter(Boolean).map((t) => t.trim());
 
   return (
-    <article className="bg-[#111411] border border-border hover:border-primary/60 hover:shadow-[0_16px_50px_rgba(118,185,0,0.08)] hover:-translate-y-0.5 transition-all duration-200 overflow-hidden group">
+    <article className="bg-bg-card border border-border hover:border-primary/60 hover:shadow-[0_16px_50px_rgba(72,112,255,0.14)] hover:-translate-y-0.5 transition-all duration-200 overflow-hidden group">
       <Link href={post.type === "activity" ? `/activities/${post.slug}` : `/posts/${post.slug}`}>
         {/* Cover Image */}
         {post.coverImage && (

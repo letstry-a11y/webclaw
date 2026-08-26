@@ -45,7 +45,7 @@ export default function LikeButton({ postId, initialCount }: LikeButtonProps) {
         "flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium transition-all border",
         liked
           ? "bg-accent/10 text-accent border-accent/20"
-          : "bg-[#111411] text-text-secondary border-border hover:border-accent hover:text-accent"
+          : "bg-bg-card text-text-secondary border-border hover:border-accent hover:text-accent"
       )}
     >
       <Heart

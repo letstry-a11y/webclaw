@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Search, PenSquare, Menu, X, Zap } from "lucide-react";
+import { Search, PenSquare, Menu, X } from "lucide-react";
 
 export default function Navbar() {
   const router = useRouter();
@@ -19,35 +20,29 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-[#080a09]/90 border-b border-border backdrop-blur-xl">
+    <nav className="sticky top-0 z-50 bg-[#032a72]/95 border-b border-white/15 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-[68px]">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <div className="w-9 h-9 bg-primary flex items-center justify-center text-black transition-transform group-hover:rotate-3">
-              <Zap className="w-5 h-5 fill-current" />
-            </div>
-            <div className="hidden sm:block leading-none">
-              <span className="text-xl font-black tracking-tight text-text-primary">MEDBOT</span>
-              <span className="block mt-1 text-[9px] font-mono tracking-[0.26em] text-primary">OPEN COMMUNITY</span>
-            </div>
+          <Link href="/" className="flex items-center shrink-0 group" aria-label="MedBot 微创机器人首页">
+            <Image src="/brand/medbot-logo-white.png" alt="MEDBOT 微创机器人" width={169} height={47} priority className="h-10 w-auto transition-opacity group-hover:opacity-85" />
           </Link>
 
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-6 ml-8">
-            <Link href="/" className="text-text-secondary hover:text-primary transition-colors text-sm font-medium">
+            <Link href="/" className="text-white/80 hover:text-white transition-colors text-sm font-medium">
               首页
             </Link>
-            <Link href="/ai-projects" className="text-text-secondary hover:text-primary transition-colors text-sm font-medium">
+            <Link href="/ai-projects" className="text-white/80 hover:text-white transition-colors text-sm font-medium">
               AI 看板
             </Link>
-            <Link href="/ai" className="text-text-secondary hover:text-primary transition-colors text-sm font-medium">
+            <Link href="/ai" className="text-white/80 hover:text-white transition-colors text-sm font-medium">
               AI
             </Link>
-            <Link href="/robots" className="text-text-secondary hover:text-primary transition-colors text-sm font-medium">
+            <Link href="/robots" className="text-white/80 hover:text-white transition-colors text-sm font-medium">
               机器人
             </Link>
-            <Link href="/success-stories" className="text-text-secondary hover:text-primary transition-colors text-sm font-medium">
+            <Link href="/success-stories" className="text-white/80 hover:text-white transition-colors text-sm font-medium">
               成果案例
             </Link>
           </div>
@@ -56,20 +51,20 @@ export default function Navbar() {
           <div className="flex items-center gap-3 ml-auto">
             <form onSubmit={handleSearch} className="hidden sm:flex items-center">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
                 <input
                   type="text"
                   placeholder="搜索文章..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 pr-4 py-2.5 w-48 lg:w-64 text-sm bg-[#111411] border border-border focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-text-tertiary"
+                  className="pl-9 pr-4 py-2.5 w-48 lg:w-64 text-sm text-white bg-[#0d3278] border border-white/20 focus:outline-none focus:border-[#4870ff] focus:ring-1 focus:ring-[#4870ff]/30 transition-all placeholder:text-white/45"
                 />
               </div>
             </form>
 
             <Link
               href="/posts/new"
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:bg-primary-hover text-black text-sm font-bold transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-[#4870ff] hover:bg-[#5b80ff] text-white text-sm font-bold transition-colors"
             >
               <PenSquare className="w-4 h-4" />
               <span className="hidden sm:inline">写文章</span>
@@ -78,7 +73,7 @@ export default function Navbar() {
             {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-text-secondary hover:text-text-primary"
+              className="md:hidden p-2 text-white/80 hover:text-white"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -88,7 +83,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-border bg-[#0c0f0c]">
+        <div className="md:hidden border-t border-white/15 bg-[#032a72]">
           <div className="px-4 py-3 space-y-2">
             <Link href="/" className="block py-2 text-text-secondary hover:text-primary" onClick={() => setMobileMenuOpen(false)}>
               首页
