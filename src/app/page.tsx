@@ -39,51 +39,50 @@ function TechVisual({ post, compact = false }: { post: HomePost; compact?: boole
   );
 }
 
-function FeatureCard({ post, size = "small" }: { post: HomePost; size?: "large" | "small" }) {
-  return (
-    <Link href={postHref(post)} className={`group relative block overflow-hidden bg-[#032a72] ${size === "large" ? "min-h-[360px] lg:min-h-[500px]" : "min-h-[240px]"}`}>
-      <TechVisual post={post} compact={size === "small"} />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#01183f] via-[#01183f]/25 to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7">
-        <span className="mb-3 inline-flex bg-[#4870ff] px-2.5 py-1 text-[11px] font-black text-white">{postCategory(post)}</span>
-        <h3 className={`${size === "large" ? "text-2xl sm:text-4xl" : "text-xl sm:text-2xl"} max-w-4xl font-black leading-tight tracking-[-0.025em] text-white`}>{post.title}</h3>
-        {size === "large" && <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 line-clamp-2">{post.excerpt}</p>}
-        <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-white group-hover:text-[#b8c6ff]">阅读更多 <ArrowRight className="h-4 w-4" /></span>
-      </div>
-    </Link>
-  );
-}
-
 function AiPointsLeaderboardCard({ members }: { members: Array<{ id: string; name: string; level: string; historicalPoints: number }> }) {
+  const memberGridClass = members.length === 1
+    ? "grid gap-px overflow-hidden border border-[#d6deed] bg-[#d6deed]"
+    : members.length === 2
+      ? "grid gap-px overflow-hidden border border-[#d6deed] bg-[#d6deed] sm:grid-cols-2"
+      : "grid gap-px overflow-hidden border border-[#d6deed] bg-[#d6deed] sm:grid-cols-3";
+
   return (
-    <div className="relative flex min-h-[240px] flex-col overflow-hidden bg-[#032a72] p-5 sm:p-6">
-      <div className="absolute inset-0 opacity-50 [background-image:linear-gradient(rgba(72,112,255,0.2)_1px,transparent_1px),linear-gradient(90deg,rgba(72,112,255,0.2)_1px,transparent_1px)] [background-size:42px_42px]" />
-      <div className="relative flex items-start justify-between gap-3">
-        <div><span className="inline-flex bg-[#4870ff] px-2.5 py-1 text-[10px] font-black text-white">公开透明</span><h2 className="mt-3 text-xl font-black text-white sm:text-2xl">AI 积分排名榜</h2></div>
-        <Medal className="h-7 w-7 text-[#9eb3ff]" />
-      </div>
+    <section className="mb-16 overflow-hidden border border-[#d6deed] bg-[#f3f6fb]" aria-label="AI 积分排名榜">
+      <div className="grid lg:grid-cols-[0.72fr_1.8fr]">
+        <div className="flex flex-col justify-between border-b border-[#d6deed] bg-white p-6 sm:p-7 lg:border-b-0 lg:border-r">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-[#4870ff]">AI CONTRIBUTION</span>
+              <h2 className="mt-2 text-2xl font-black tracking-[-0.03em] text-black">AI 积分排名榜</h2>
+              <p className="mt-2 text-sm leading-6 text-[#596579]">公开展示 AI 实践贡献与成长等级。</p>
+            </div>
+            <Medal className="h-7 w-7 shrink-0 text-[#032a72]" />
+          </div>
+          <Link href="/ai-points" className="mt-5 inline-flex items-center gap-1 text-sm font-black text-[#032a72] hover:text-[#4870ff]">查看完整榜单 <ArrowRight className="h-4 w-4" /></Link>
+        </div>
 
-      <div className="relative mt-4 flex-1">
-        {members.length > 0 ? (
-          <ol className="space-y-2">
-            {members.map((member, index) => (
-              <li key={member.id} className="grid grid-cols-[26px_1fr_auto] items-center gap-2 text-xs text-white">
-                <span className="font-mono font-black text-[#9eb3ff]">{String(index + 1).padStart(2, "0")}</span>
-                <span className="min-w-0 truncate font-bold">{member.name} <small className="ml-1 font-medium text-white/55">{member.level}</small></span>
-                <strong>{new Intl.NumberFormat("zh-CN").format(member.historicalPoints)} 分</strong>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <div className="border-l-2 border-[#4870ff] pl-3"><p className="text-sm font-bold text-white">积分数据待AI发展委员会公示</p><p className="mt-1 text-xs leading-5 text-white/55">首批名单确认后，将按历史累计积分公开排名。</p></div>
-        )}
+        <div className="p-4 sm:p-6">
+          {members.length > 0 ? (
+            <ol className={memberGridClass}>
+              {members.map((member, index) => (
+                <li key={member.id} className="flex min-h-[118px] items-center gap-4 bg-white p-5">
+                  <span className="font-mono text-2xl font-black text-[#4870ff]">{String(index + 1).padStart(2, "0")}</span>
+                  <div className="min-w-0">
+                    <p className="truncate text-base font-black text-black">{member.name}</p>
+                    <p className="mt-1 text-xs font-bold text-[#6c778a]">{member.level}</p>
+                    <strong className="mt-2 block text-sm text-[#032a72]">{new Intl.NumberFormat("zh-CN").format(member.historicalPoints)} 积分</strong>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <div className="flex min-h-[118px] items-center border-l-2 border-[#4870ff] bg-white px-6">
+              <div><p className="text-sm font-black text-black">积分数据待 AI 发展委员会公示</p><p className="mt-1 text-xs leading-5 text-[#6c778a]">首批名单确认后，将按历史累计积分公开排名。</p></div>
+            </div>
+          )}
+        </div>
       </div>
-
-      <div className="relative mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/15 pt-3">
-        <span className="text-[10px] text-white/55">历史积分用于排名与等级 · 可用积分 1:1 兑换</span>
-        <Link href="/ai-points" className="inline-flex items-center gap-1 text-xs font-black text-white hover:text-[#b8c6ff]">查看榜单 <ArrowRight className="h-3.5 w-3.5" /></Link>
-      </div>
-    </div>
+    </section>
   );
 }
 
@@ -111,12 +110,8 @@ function SectionHeader({ title, href, linkText }: { title: string; href: string;
 }
 
 export default async function HomePage() {
-  const [policyPost, featuredPosts, recentStories, latestPosts, activities, topPointMembers, activeRecruitments] = await Promise.all([
+  const [policyPost, recentStories, latestPosts, activities, topPointMembers, activeRecruitments] = await Promise.all([
     prisma.post.findUnique({ where: { slug: "ai-application-project-incentive-policy", isPublished: true } }),
-    prisma.post.findMany({
-      where: { isPublished: true, OR: [{ isPinned: true }, { isFeatured: true }] },
-      orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }], take: 3,
-    }),
     prisma.post.findMany({
       where: { isPublished: true, type: "blog", category: "success-stories" },
       orderBy: { createdAt: "desc" }, take: 3,
@@ -139,11 +134,7 @@ export default async function HomePage() {
 
   const activeRecruitmentPostIds = new Set(activeRecruitments.map((request) => request.activityPostId).filter(Boolean));
   const otherActivities = activities.filter((post) => !activeRecruitmentPostIds.has(post.id));
-  const featuredWithoutRecruitment = featuredPosts.filter((post) => !activeRecruitmentPostIds.has(post.id));
-  const fallbackPosts = [...latestPosts, ...otherActivities];
-  const spotlightSeed = policyPost ? [policyPost, ...featuredWithoutRecruitment.filter((post) => post.id !== policyPost.id)] : featuredWithoutRecruitment;
-  const spotlight = [...spotlightSeed, ...fallbackPosts.filter((post) => !spotlightSeed.some((featured) => featured.id === post.id))].slice(0, 3);
-  const primaryPosts = latestPosts.length > 0 ? latestPosts : spotlight;
+  const primaryPosts = latestPosts;
   const storyGridClass = recentStories.length === 1
     ? "grid gap-6"
     : recentStories.length === 2
@@ -160,15 +151,6 @@ export default async function HomePage() {
         </Link>
       )}
       <RecruitmentSpotlight recruitments={activeRecruitments} />
-      {spotlight.length > 0 && (
-        <section className="grid border-b border-[#032a72] bg-[#032a72] md:grid-cols-3" aria-label="焦点内容">
-          <div className="md:col-span-2 md:border-r md:border-white/20"><FeatureCard post={spotlight[0]} size="large" /></div>
-          <div className="grid grid-rows-2">
-            {spotlight.slice(1, 2).map((post) => <div key={post.id}><FeatureCard post={post} /></div>)}
-            <div className="border-t border-white/20"><AiPointsLeaderboardCard members={topPointMembers} /></div>
-          </div>
-        </section>
-      )}
 
       <nav className="border-b border-[#032a72] bg-[#032a72]" aria-label="内容分类">
         <div className="mx-auto flex max-w-7xl items-center gap-7 overflow-x-auto px-4 sm:px-6">
@@ -189,6 +171,8 @@ export default async function HomePage() {
             </div>
           </section>
         )}
+
+        <AiPointsLeaderboardCard members={topPointMembers} />
 
         {primaryPosts.length > 0 && (
           <section className="mb-16">
