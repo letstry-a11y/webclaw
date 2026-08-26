@@ -36,6 +36,9 @@ export default function Navbar() {
             <Link href="/ai-projects" className="text-white/80 hover:text-white transition-colors text-sm font-medium">
               AI 看板
             </Link>
+            <Link href="/ai-points" className="text-white/80 hover:text-white transition-colors text-sm font-medium">
+              AI 积分榜
+            </Link>
             <Link href="/ai" className="text-white/80 hover:text-white transition-colors text-sm font-medium">
               AI
             </Link>
@@ -90,6 +93,9 @@ export default function Navbar() {
             </Link>
             <Link href="/ai-projects" className="block py-2 text-text-secondary hover:text-primary" onClick={() => setMobileMenuOpen(false)}>
               AI 看板
+            </Link>
+            <Link href="/ai-points" className="block py-2 text-text-secondary hover:text-primary" onClick={() => setMobileMenuOpen(false)}>
+              AI 积分榜
             </Link>
             <Link href="/ai" className="block py-2 text-text-secondary hover:text-primary" onClick={() => setMobileMenuOpen(false)}>
               AI
