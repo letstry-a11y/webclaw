@@ -43,7 +43,7 @@ const reviewSchema = z.object({
   warrantyMonths: z.coerce.number().int().min(1).max(24),
   reviewedBy: z.string().trim().min(1).max(80),
   committeeAssistant: z.enum(committeeAssistants, { message: "请选择AI发展委员会协助人" }),
-  reviewComment: z.string().trim().min(3).max(2000),
+  reviewComment: z.string().trim().min(1, "请填写评审意见").max(2000),
 });
 
 const committeeAssistantSchema = z.enum(committeeAssistants, { message: "请选择AI发展委员会协助人" });
