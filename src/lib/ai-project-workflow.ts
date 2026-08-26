@@ -10,6 +10,8 @@ export const requestStatuses = [
   "completed",
 ] as const;
 
+export const committeeAssistants = ["朱祥", "邵辉", "李涛", "戴婷萍"] as const;
+
 export type AiRequestStatus = (typeof requestStatuses)[number];
 
 export const requestStatusMeta: Record<AiRequestStatus, { label: string; description: string; tone: string }> = {

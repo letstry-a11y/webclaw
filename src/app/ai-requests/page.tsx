@@ -3,7 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import AiRequestForm from "./AiRequestForm";
 import { formatProjectDate, requestStatusMeta, type AiRequestStatus } from "@/lib/ai-project-workflow";
-import { ArrowRight, Building2, CalendarClock, CheckCircle2, CircleDollarSign, ClipboardCheck, ClipboardList, Plus, ShieldCheck, Sparkles, UserCheck, Users } from "lucide-react";
+import { ArrowRight, Building2, CalendarClock, CheckCircle2, CircleDollarSign, ClipboardCheck, ClipboardList, Handshake, Plus, ShieldCheck, Sparkles, UserCheck, Users } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "AI 项目需求与招募 - Medbot",
@@ -90,6 +90,7 @@ export default async function AiRequestsPage() {
                               <div className="flex min-w-0 items-center gap-1.5"><UserCheck className="h-3.5 w-3.5 shrink-0 text-[#8491a8]" /><dt className="text-[#8491a8]">负责人</dt><dd className="truncate font-bold text-[#34445e]">{lead}</dd></div>
                               <div className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-[#8491a8]" /><dt className="text-[#8491a8]">等级</dt><dd className="font-bold text-[#34445e]">{request.projectLevel ? `${request.projectLevel} 级` : "待评审"}</dd></div>
                               <div className="flex items-center gap-1.5"><CalendarClock className="h-3.5 w-3.5 text-[#8491a8]" /><dt className="text-[#8491a8]">积分包</dt><dd className="font-bold text-[#34445e]">{request.basePointPool?.toLocaleString("zh-CN") ?? "待评审"}</dd></div>
+                              <div className="col-span-2 flex min-w-0 items-center gap-1.5"><Handshake className="h-3.5 w-3.5 shrink-0 text-[#8491a8]" /><dt className="text-[#8491a8]">AI发展委员会协助人</dt><dd className="truncate font-bold text-[#34445e]">{request.committeeAssistant || "待评审时指定"}</dd></div>
                             </dl>
                           </Link>
                         );

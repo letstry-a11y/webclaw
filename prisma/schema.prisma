@@ -167,6 +167,7 @@ model AiDemandRequest {
   basePointPool        Int?
   reviewComment        String    @default("")
   reviewedBy           String    @default("")
+  committeeAssistant   String    @default("")
   reviewedAt           DateTime?
   recruitmentDeadline  DateTime?
   plannedTeamSize      Int       @default(0)

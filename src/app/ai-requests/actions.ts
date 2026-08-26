@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { effectCoefficientValues } from "@/lib/ai-project-workflow";
+import { committeeAssistants, effectCoefficientValues } from "@/lib/ai-project-workflow";
 import { attachmentSchema } from "@/lib/validators";
 import { z } from "zod";
 
@@ -42,8 +42,11 @@ const reviewSchema = z.object({
   plannedTeamSize: z.coerce.number().int().min(1).max(100),
   warrantyMonths: z.coerce.number().int().min(1).max(24),
   reviewedBy: z.string().trim().min(1).max(80),
+  committeeAssistant: z.enum(committeeAssistants, { message: "请选择AI发展委员会协助人" }),
   reviewComment: z.string().trim().min(3).max(2000),
 });
+
+const committeeAssistantSchema = z.enum(committeeAssistants, { message: "请选择AI发展委员会协助人" });
 
 const applicationSchema = z.object({
   name: z.string().trim().min(1).max(50),
@@ -86,12 +89,13 @@ function recruitmentContent(request: {
   expectedDeliverables: string;
   recruitmentRoles: string;
   weeklyCommitment: string;
-}, review: z.infer<typeof reviewSchema>) {
+}, review: Pick<z.infer<typeof reviewSchema>, "projectLevel" | "basePointPool" | "committeeAssistant">) {
   return `
 <div style="border-left:5px solid #4870ff;background:#eef3fb;padding:18px 20px;margin-bottom:28px">
   <p style="margin:0 0 8px"><strong>AI 项目公开招募</strong></p>
   <p style="margin:0">该需求已经 AI发展委员会评审，项目等级为 ${review.projectLevel} 级，基础积分总包为 ${review.basePointPool.toLocaleString("zh-CN")} 分。团队确认后将自动进入 AI 项目看板。</p>
 </div>
+<p><strong>AI发展委员会协助人：</strong>${escapeHtml(review.committeeAssistant)}（协助项目团队协调资源）</p>
 <h2>需求背景</h2><p>${escapeHtml(request.background)}</p>
 <h2>当前问题</h2><p>${escapeHtml(request.currentProblem)}</p>
 <h2>希望实现的功能</h2><p>${escapeHtml(request.desiredFunctions)}</p>
@@ -153,7 +157,29 @@ export async function reviewAndPublish(requestId: string, formData: FormData) {
       data: { ...review, status: "recruiting", reviewedAt: new Date(), activityPostId: post.id },
     });
     await tx.aiWorkflowLog.create({
-      data: { requestId, action: "AI发展委员会评审通过并发布招募", actor: review.reviewedBy, detail: `${review.projectLevel} 级项目，基础积分总包 ${review.basePointPool} 分` },
+      data: { requestId, action: "AI发展委员会评审通过并发布招募", actor: review.reviewedBy, detail: `${review.projectLevel} 级项目，基础积分总包 ${review.basePointPool} 分，协助人 ${review.committeeAssistant}` },
+    });
+  });
+  refreshWorkflow(requestId);
+}
+
+export async function updateCommitteeAssistant(requestId: string, formData: FormData) {
+  const committeeAssistant = committeeAssistantSchema.parse(formData.get("committeeAssistant"));
+  const request = await prisma.aiDemandRequest.findUniqueOrThrow({ where: { id: requestId }, include: { activityPost: true } });
+  if (request.status === "pending_review") throw new Error("请在需求评审时指定AI发展委员会协助人");
+  if (request.committeeAssistant === committeeAssistant) return;
+  const previousAssistant = request.committeeAssistant || "未指定";
+
+  await prisma.$transaction(async (tx) => {
+    await tx.aiDemandRequest.update({ where: { id: requestId }, data: { committeeAssistant } });
+    if (request.activityPost && request.projectLevel && request.basePointPool) {
+      await tx.post.update({
+        where: { id: request.activityPost.id },
+        data: { content: recruitmentContent(request, { projectLevel: request.projectLevel, basePointPool: request.basePointPool, committeeAssistant }) },
+      });
+    }
+    await tx.aiWorkflowLog.create({
+      data: { requestId, action: "更新AI发展委员会协助人", actor: "AI发展委员会", detail: `${previousAssistant} → ${committeeAssistant}` },
     });
   });
   refreshWorkflow(requestId);

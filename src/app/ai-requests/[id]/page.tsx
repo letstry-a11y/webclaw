@@ -5,11 +5,11 @@ import { prisma } from "@/lib/prisma";
 import {
   advanceProjectStage, completeWarranty, confirmTeam,
   proposePointAllocation, reviewAndPublish, scoreProject, submitApplication,
-  updateApplicationStatus,
+  updateApplicationStatus, updateCommitteeAssistant,
 } from "../actions";
 import {
   applicationStatusMeta, formatProjectDate, requestStatusMeta, requestStatuses,
-  effectCoefficientOptions, type AiRequestStatus,
+  committeeAssistants, effectCoefficientOptions, type AiRequestStatus,
 } from "@/lib/ai-project-workflow";
 import {
   ArrowLeft, ArrowRight, Award, Building2, CheckCircle2,
@@ -124,6 +124,7 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
                 <div><p className="font-mono text-[10px] tracking-[0.18em] text-[#032a72]">AI DEVELOPMENT COMMITTEE REVIEW</p><h2 className="mt-2 text-2xl font-black">AI发展委员会评审并发布招募</h2><p className="mt-2 text-sm leading-6 text-[#6b7890]">评审通过后将立即生成一篇社区活动，并开放员工报名。</p></div>
                 <div className="grid gap-3 sm:grid-cols-3"><div><label className={labelClass}>AI 项目等级</label><select className={fieldClass} name="projectLevel" defaultValue="3">{[1,2,3,4,5].map((level) => <option key={level} value={level}>{level} 级项目</option>)}</select></div><div><label className={labelClass}>基础积分总包</label><input className={fieldClass} name="basePointPool" type="number" min="1" required /></div><div><label className={labelClass}>计划团队人数</label><input className={fieldClass} name="plannedTeamSize" type="number" min="1" defaultValue="3" required /></div></div>
                 <div className="grid gap-3 sm:grid-cols-3"><div><label className={labelClass}>报名截止日期</label><input className={fieldClass} name="recruitmentDeadline" type="date" required /></div><div><label className={labelClass}>质保期（月）</label><input className={fieldClass} name="warrantyMonths" type="number" min="1" max="24" defaultValue="3" required /></div><div><label className={labelClass}>评审人</label><input className={fieldClass} name="reviewedBy" required maxLength={80} defaultValue="AI发展委员会" /></div></div>
+                <div><label className={labelClass}>AI发展委员会协助人</label><select className={fieldClass} name="committeeAssistant" required defaultValue=""><option value="" disabled>请选择协助项目协调资源的委员会成员</option>{committeeAssistants.map((member) => <option key={member} value={member}>{member}</option>)}</select></div>
                 <div><label className={labelClass}>评审意见</label><textarea className={fieldClass} name="reviewComment" required rows={3} maxLength={2000} placeholder="说明项目等级、积分总包及招募建议的评审依据" /></div>
                 <button className="inline-flex items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white hover:bg-[#5b80ff]" type="submit"><Send className="h-4 w-4" />通过评审并发布社区招募</button>
               </form>
@@ -179,6 +180,19 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
 
           <aside className="space-y-6">
             <section className={panelClass}><h2 className="text-lg font-black">需求方信息</h2><dl className="mt-4 space-y-3 text-sm"><div className="flex items-center gap-2"><Building2 className="h-4 w-4 text-[#4870ff]" /><span>{request.requesterDepartment}</span></div><div className="flex items-center gap-2"><UserCheck className="h-4 w-4 text-[#4870ff]" /><span>{request.requesterName}</span></div><div className="flex items-center gap-2"><Mail className="h-4 w-4 text-[#4870ff]" /><a href={`mailto:${request.requesterEmail}`} className="break-all text-[#032a72] hover:underline">{request.requesterEmail}</a></div><div className="flex items-center gap-2"><Target className="h-4 w-4 text-[#4870ff]" /><span>期望完成：{formatProjectDate(request.targetDate)}</span></div></dl></section>
+
+            <section className={panelClass}>
+              <h2 className="text-lg font-black">AI发展委员会协助人</h2>
+              <p className="mt-2 text-sm leading-6 text-[#6b7890]">协助项目负责人协调所需资源。</p>
+              {request.status === "pending_review" ? (
+                <p className="mt-4 border border-dashed border-[#cbd5e6] bg-[#fafbfd] px-3 py-3 text-sm font-bold text-[#6b7890]">待评审时指定</p>
+              ) : (
+                <form action={updateCommitteeAssistant.bind(null, id)} className="mt-4 space-y-3">
+                  <select className={fieldClass} name="committeeAssistant" required defaultValue={request.committeeAssistant}><option value="" disabled>请选择协助人</option>{committeeAssistants.map((member) => <option key={member} value={member}>{member}</option>)}</select>
+                  <button className="w-full border border-[#4870ff] px-3 py-2 text-xs font-black text-[#032a72] hover:bg-[#4870ff] hover:text-white" type="submit">保存协助人</button>
+                </form>
+              )}
+            </section>
 
             <section className={panelClass}><h2 className="text-lg font-black">评审与积分</h2><dl className="mt-4 space-y-3 text-sm"><div className="flex justify-between"><dt className="text-[#6b7890]">项目等级</dt><dd className="font-black">{request.projectLevel ? `${request.projectLevel} 级` : "待评审"}</dd></div><div className="flex justify-between"><dt className="text-[#6b7890]">基础积分</dt><dd className="font-black">{request.basePointPool?.toLocaleString("zh-CN") ?? "待评审"}</dd></div><div className="flex justify-between"><dt className="text-[#6b7890]">成效系数</dt><dd className="font-black">{request.effectCoefficient ?? "待评审"}</dd></div><div className="flex justify-between border-t border-[#e2e8f2] pt-3"><dt className="text-[#6b7890]">最终积分</dt><dd className="font-black text-[#032a72]">{request.finalPointPool?.toLocaleString("zh-CN") ?? "待计算"}</dd></div></dl></section>
 
