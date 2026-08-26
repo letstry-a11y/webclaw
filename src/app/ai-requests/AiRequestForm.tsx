@@ -43,7 +43,7 @@ export default function AiRequestForm() {
           accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.png,.jpg,.jpeg,.webp"
         />
       </div>
-      <button className="w-full bg-[#4870ff] px-4 py-3 text-sm font-black text-white hover:bg-[#5b80ff]" type="submit">提交需求，进入委员会评审</button>
+      <button className="w-full bg-[#4870ff] px-4 py-3 text-sm font-black text-white hover:bg-[#5b80ff]" type="submit">提交需求，进入AI发展委员会评审</button>
     </form>
   );
 }
