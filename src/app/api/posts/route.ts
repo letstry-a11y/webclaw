@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createPostSchema } from "@/lib/validators";
 import { slugify, generateExcerpt } from "@/lib/utils";
-import { getFingerprint } from "@/lib/fingerprint";
+import { requireUser } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: Request) {
   try {
+    const user = await requireUser();
     const body = await request.json();
     const data = createPostSchema.parse(body);
 
@@ -43,7 +44,6 @@ export async function POST(request: Request) {
       slug = `${slug}-${Date.now().toString(36)}`;
     }
 
-    const fingerprint = await getFingerprint();
     const post = await prisma.post.create({
       data: {
         title: data.title,
@@ -53,8 +53,8 @@ export async function POST(request: Request) {
         coverImage: data.coverImage || null,
         category: data.category,
         tags: data.tags,
-        authorName: data.authorName || "匿名用户",
-        authorFingerprint: fingerprint,
+        authorName: user.name,
+        authorFingerprint: `user:${user.id}`,
         type: data.type,
         eventDate: data.eventDate ? new Date(data.eventDate) : null,
         eventLocation: data.eventLocation || null,

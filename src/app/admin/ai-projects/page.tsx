@@ -6,6 +6,7 @@ import {
   BrainCircuit, CalendarClock, ChevronDown, CircleDot, ClipboardPlus, Handshake, Pencil,
   Rocket, Search, ShoppingCart, Smartphone, Users,
 } from "lucide-react";
+import { isAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,7 @@ function refreshDashboard() {
 
 async function updateProject(projectId: string, formData: FormData) {
   "use server";
+  if (!(await isAdmin())) throw new Error("没有管理员权限");
   await prisma.aiProject.update({ where: { id: projectId }, data: projectFromForm(formData) });
   refreshDashboard();
 }

@@ -52,6 +52,7 @@ next-env.d.ts
 
 # uploaded files
 /public/uploads/
+/data/private-uploads/
 
 # generated private visitor analytics reports
 /访问记录/*

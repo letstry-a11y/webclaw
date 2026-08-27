@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import AiRequestForm from "./AiRequestForm";
 import { formatProjectDate, requestStatusMeta, type AiRequestStatus } from "@/lib/ai-project-workflow";
 import { ArrowRight, Building2, CalendarClock, CheckCircle2, CircleDollarSign, ClipboardCheck, ClipboardList, Handshake, Plus, ShieldCheck, Sparkles, UserCheck, Users } from "lucide-react";
+import { requireUser } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "AI 项目需求与招募 - Medbot",
@@ -22,6 +23,7 @@ const processGroups = [
 ] as const;
 
 export default async function AiRequestsPage() {
+  const user = await requireUser();
   const requests = await prisma.aiDemandRequest.findMany({
     orderBy: { updatedAt: "desc" },
     include: {
@@ -44,7 +46,7 @@ export default async function AiRequestsPage() {
             </div>
             <details className="group relative">
               <summary className="flex cursor-pointer list-none items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white hover:bg-[#5b80ff]"><Plus className="h-4 w-4" /> 提交 AI 应用需求</summary>
-              <AiRequestForm />
+              <AiRequestForm user={user} />
             </details>
           </div>
         </div>

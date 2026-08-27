@@ -4,9 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Search, PenSquare, Menu, X } from "lucide-react";
+import { Search, PenSquare, Menu, X, LogOut } from "lucide-react";
 
-export default function Navbar() {
+export default function Navbar({ user }: { user: { name: string; role: string } }) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -70,6 +70,13 @@ export default function Navbar() {
               <span className="hidden sm:inline">写文章</span>
             </Link>
 
+            <div className="hidden items-center gap-2 border-l border-white/20 pl-3 lg:flex">
+              <span className="max-w-24 truncate text-xs text-white/75" title={user.name}>{user.name}</span>
+              <form action="/api/auth/logout" method="POST">
+                <button type="submit" title="退出登录" className="p-2 text-white/70 hover:text-white"><LogOut className="h-4 w-4" /></button>
+              </form>
+            </div>
+
             {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -112,6 +119,7 @@ export default function Navbar() {
                 />
               </div>
             </form>
+            <form action="/api/auth/logout" method="POST" className="pt-2"><button className="flex w-full items-center gap-2 py-2 text-sm text-white/80"><LogOut className="h-4 w-4" />退出登录</button></form>
           </div>
         </div>
       )}

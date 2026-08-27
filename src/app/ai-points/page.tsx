@@ -7,6 +7,8 @@ import {
   ArrowRight, Award, ChevronDown, CircleDollarSign, FileCheck2,
   History, Medal, Pencil, Plus, ShieldCheck, Sparkles, Trophy, Users,
 } from "lucide-react";
+import { requireUser } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit";
 
 export const metadata: Metadata = {
   title: "AI 积分排名榜 - Medbot",
@@ -63,18 +65,23 @@ function refreshPoints() {
 
 async function createMember(formData: FormData) {
   "use server";
-  await prisma.aiPointMember.create({ data: memberFromForm(formData) });
+  const user = await requireUser(["committee", "admin"]);
+  const member = await prisma.aiPointMember.create({ data: memberFromForm(formData) });
+  await writeAuditLog(user, "新增积分成员", { targetType: "AiPointMember", targetId: member.id, detail: member.name });
   refreshPoints();
 }
 
 async function updateMember(memberId: string, formData: FormData) {
   "use server";
+  const user = await requireUser(["committee", "admin"]);
   await prisma.aiPointMember.update({ where: { id: memberId }, data: memberFromForm(formData) });
+  await writeAuditLog(user, "编辑积分成员", { targetType: "AiPointMember", targetId: memberId });
   refreshPoints();
 }
 
 async function addPointEntry(memberId: string, formData: FormData) {
   "use server";
+  const user = await requireUser(["committee", "admin"]);
   const entry = entrySchema.parse({
     historicalDelta: formData.get("historicalDelta") ?? 0,
     availableDelta: formData.get("availableDelta") ?? 0,
@@ -82,6 +89,7 @@ async function addPointEntry(memberId: string, formData: FormData) {
     projectName: formData.get("projectName") ?? "",
     operatorName: formData.get("operatorName") || "公开登记",
   });
+  await writeAuditLog(user, "登记积分变动", { targetType: "AiPointMember", targetId: memberId, detail: entry.reason });
   if (entry.historicalDelta === 0 && entry.availableDelta === 0) {
     throw new Error("至少填写一项积分变动");
   }
@@ -135,6 +143,8 @@ function formatDate(value: Date) {
 }
 
 export default async function AiPointsPage({ searchParams }: { searchParams: Promise<{ level?: string }> }) {
+  const viewer = await requireUser();
+  const canEdit = viewer.role === "committee" || viewer.role === "admin";
   const params = await searchParams;
   const activeLevel = levelSchema.safeParse(params.level).success ? params.level as LevelCode : "ALL";
   const members = await prisma.aiPointMember.findMany({
@@ -156,14 +166,14 @@ export default async function AiPointsPage({ searchParams }: { searchParams: Pro
               <h1 className="text-4xl font-black tracking-[-0.04em] sm:text-6xl">AI 积分排名榜</h1>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-white/70 sm:text-base">公开展示员工在 AI 应用项目中的历史贡献、AI发展委员会认定等级和积分变更记录。</p>
             </div>
-            <details className="group relative">
+            {canEdit && <details className="group relative">
               <summary className="flex cursor-pointer list-none items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white hover:bg-[#5b80ff]"><Plus className="h-4 w-4" /> 新增积分成员</summary>
               <form action={createMember} className="absolute right-0 z-30 mt-2 w-[min(92vw,720px)] space-y-4 border border-[#cbd5e6] bg-white p-5 text-[#111827] shadow-2xl">
                 <MemberFields />
                 <p className="text-xs leading-5 text-[#6b7890]">新增成员初始积分为 0，积分必须通过公开变更记录发放。</p>
                 <button className="w-full bg-[#4870ff] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#5b80ff]" type="submit">创建成员</button>
               </form>
-            </details>
+            </details>}
           </div>
         </div>
       </header>
@@ -202,7 +212,7 @@ export default async function AiPointsPage({ searchParams }: { searchParams: Pro
                       <div className="text-right text-xs leading-5 text-[#52627d]">结题 {member.completedProjects}<br />主导 {member.ledProjects}</div>
                     </div>
 
-                    <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                    {canEdit && <div className="mt-4 grid gap-3 lg:grid-cols-2">
                       <details className="group border border-[#d8e0ee]">
                         <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-xs font-bold text-[#032a72]"><span className="flex items-center gap-1.5"><Pencil className="h-3.5 w-3.5" /> 编辑成员档案</span><ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /></summary>
                         <form action={updateMember.bind(null, member.id)} className="space-y-4 border-t border-[#d8e0ee] p-4"><MemberFields member={member} /><button className="w-full border border-[#4870ff] px-4 py-2 text-xs font-bold text-[#032a72] hover:bg-[#4870ff] hover:text-white">保存档案</button></form>
@@ -216,7 +226,7 @@ export default async function AiPointsPage({ searchParams }: { searchParams: Pro
                           <button className="w-full bg-[#4870ff] px-4 py-2 text-xs font-bold text-white hover:bg-[#5b80ff]">确认登记并生成记录</button>
                         </form>
                       </details>
-                    </div>
+                    </div>}
 
                     {member.entries.length > 0 && (
                       <div className="mt-3 bg-[#f7f9fc] px-4 py-3">

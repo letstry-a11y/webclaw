@@ -8,7 +8,7 @@ import { createAiRequest } from "./actions";
 const fieldClass = "w-full border border-[#cbd5e6] bg-white px-3 py-2.5 text-sm text-[#111827] placeholder:text-[#8491a8] focus:border-[#4870ff] focus:outline-none focus:ring-1 focus:ring-[#4870ff]";
 const labelClass = "mb-1.5 block text-xs font-bold text-[#52627d]";
 
-export default function AiRequestForm() {
+export default function AiRequestForm({ user }: { user: { name: string; department: string; email: string } }) {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
   return (
@@ -16,9 +16,9 @@ export default function AiRequestForm() {
       <input type="hidden" name="attachments" value={JSON.stringify(attachments)} />
       <div><label className={labelClass}>需求名称</label><input className={fieldClass} name="title" required maxLength={120} placeholder="用一句话说明希望建设的 AI 应用" /></div>
       <div className="grid gap-3 sm:grid-cols-3">
-        <div><label className={labelClass}>需求方姓名</label><input className={fieldClass} name="requesterName" required maxLength={50} /></div>
-        <div><label className={labelClass}>需求部门</label><input className={fieldClass} name="requesterDepartment" required maxLength={80} /></div>
-        <div><label className={labelClass}>企业邮箱</label><input className={fieldClass} name="requesterEmail" type="email" required maxLength={120} /></div>
+        <div><label className={labelClass}>需求方姓名</label><input className={fieldClass} name="requesterName" required maxLength={50} defaultValue={user.name} readOnly /></div>
+        <div><label className={labelClass}>需求部门</label><input className={fieldClass} name="requesterDepartment" required maxLength={80} defaultValue={user.department} readOnly /></div>
+        <div><label className={labelClass}>企业邮箱</label><input className={fieldClass} name="requesterEmail" type="email" required maxLength={120} defaultValue={user.email} readOnly /></div>
       </div>
       <div><label className={labelClass}>业务背景</label><textarea className={fieldClass} name="background" required rows={3} maxLength={3000} placeholder="该需求产生于什么业务场景？" /></div>
       <div><label className={labelClass}>当前问题</label><textarea className={fieldClass} name="currentProblem" required rows={3} maxLength={3000} placeholder="目前的流程、效率或客户体验存在哪些问题？" /></div>

@@ -7,18 +7,25 @@ services:
     container_name: webclaw
     restart: unless-stopped
     ports:
-      - "${WEBCLAW_PORT:-3100}:3000"
+      - "127.0.0.1:${WEBCLAW_PORT:-3100}:3000"
     environment:
       DATABASE_URL: "file:/app/data/dev.db"
       ADMIN_PASSWORD: "${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}"
       JWT_SECRET: "${JWT_SECRET:?JWT_SECRET must be set (use a long random string)}"
+      COMPANY_EMAIL_DOMAINS: "${COMPANY_EMAIL_DOMAINS:-microport.com}"
+      SMTP_HOST: "${SMTP_HOST:?SMTP_HOST must be set for company email verification}"
+      SMTP_PORT: "${SMTP_PORT:-465}"
+      SMTP_SECURE: "${SMTP_SECURE:-true}"
+      SMTP_USER: "${SMTP_USER:?SMTP_USER must be set for company email verification}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD:?SMTP_PASSWORD must be set for company email verification}"
+      SMTP_FROM: "${SMTP_FROM:?SMTP_FROM must be set for company email verification}"
       SEED_ON_STARTUP: "${SEED_ON_STARTUP:-false}"
       TZ: "Asia/Shanghai"
     volumes:
       - webclaw-data:/app/data
       - webclaw-uploads:/app/public/uploads
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 5s
       retries: 3

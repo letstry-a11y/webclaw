@@ -213,6 +213,58 @@ model VisitRecord {
   @@index([sessionId, startedAt])
 }
 
+model User {
+  id                  String    @id @default(cuid())
+  name                String
+  email               String    @unique
+  department          String
+  passwordHash        String
+  role                String    @default("employee")
+  isActive            Boolean   @default(true)
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  sessionVersion      Int       @default(1)
+  lastLoginAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  auditLogs AuditLog[]
+
+  @@index([role, isActive])
+}
+
+model EmailVerificationCode {
+  id        String    @id @default(cuid())
+  email     String
+  purpose   String
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  attempts  Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  @@index([email, purpose, createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  actorName  String
+  actorEmail String
+  action     String
+  targetType String   @default("")
+  targetId   String   @default("")
+  detail     String   @default("")
+  ipAddress  String   @default("")
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
+
 model AiProjectApplication {
   id                 String   @id @default(cuid())
   requestId          String

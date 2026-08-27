@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import PointAllocationForm from "./PointAllocationForm";
 import { attachmentSchema, type Attachment } from "@/lib/validators";
+import { requireUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +70,7 @@ function StageAction({ title, description, action, button }: { title: string; de
 }
 
 export default async function AiRequestDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const user = await requireUser();
   const { id } = await params;
   const request = await prisma.aiDemandRequest.findUnique({
     where: { id },
@@ -86,6 +88,10 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
   const currentIndex = requestStatuses.indexOf(request.status as AiRequestStatus);
   const selectedApplications = request.applications.filter((application) => application.status === "selected");
   const projectLead = request.teamMembers.find((member) => member.isLead);
+  const isCommittee = user.role === "committee" || user.role === "admin";
+  const isManager = isCommittee || request.requesterEmail.toLowerCase() === user.email || projectLead?.email.toLowerCase() === user.email;
+  const canAllocate = isCommittee || projectLead?.email.toLowerCase() === user.email;
+  const visibleApplications = isManager ? request.applications : request.applications.filter((application) => application.email.toLowerCase() === user.email);
   const attachments = parseAttachments(request.attachments);
 
   return (
@@ -119,7 +125,7 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
               {attachments.length > 0 && <div className="mt-6 border-t border-[#d8e0ee] pt-5"><h3 className="flex items-center gap-2 text-sm font-black text-[#032a72]"><Paperclip className="h-4 w-4" />需求附件（{attachments.length}）</h3><ul className="mt-3 grid gap-2 sm:grid-cols-2">{attachments.map((attachment) => <li key={attachment.url}><a href={attachment.url} download={attachment.name} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-3 border border-[#d8e0ee] bg-[#fafbfd] px-3 py-2.5 hover:border-[#4870ff] hover:bg-[#f2f5ff]"><FileText className="h-4 w-4 shrink-0 text-[#6b7890] group-hover:text-[#4870ff]" /><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-[#34445e]">{attachment.name}</span><span className="block text-[10px] text-[#8491a8]">{formatAttachmentSize(attachment.size)}</span></span><Download className="h-4 w-4 shrink-0 text-[#8491a8] group-hover:text-[#4870ff]" /></a></li>)}</ul></div>}
             </section>
 
-            {request.status === "pending_review" && (
+            {request.status === "pending_review" && isCommittee && (
               <form action={reviewAndPublish.bind(null, id)} className={`${panelClass} space-y-4`}>
                 <div><p className="font-mono text-[10px] tracking-[0.18em] text-[#032a72]">AI DEVELOPMENT COMMITTEE REVIEW</p><h2 className="mt-2 text-2xl font-black">AI发展委员会评审并发布招募</h2><p className="mt-2 text-sm leading-6 text-[#6b7890]">评审通过后将立即生成一篇社区活动，并开放员工报名。</p></div>
                 <div className="grid gap-3 sm:grid-cols-3"><div><label className={labelClass}>AI 项目等级</label><select className={fieldClass} name="projectLevel" defaultValue="3">{[1,2,3,4,5].map((level) => <option key={level} value={level}>{level} 级项目</option>)}</select></div><div><label className={labelClass}>基础积分总包</label><input className={fieldClass} name="basePointPool" type="number" min="1" required /></div><div><label className={labelClass}>计划团队人数</label><input className={fieldClass} name="plannedTeamSize" type="number" min="1" defaultValue="3" required /></div></div>
@@ -134,31 +140,31 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
               <>
                 <form action={submitApplication.bind(null, id)} className={`${panelClass} space-y-4`}>
                   <div><p className="font-mono text-[10px] tracking-[0.18em] text-[#032a72]">JOIN THE PROJECT</p><h2 className="mt-2 text-2xl font-black">报名参与项目</h2><p className="mt-2 text-sm text-[#6b7890]">报名截止：{formatProjectDate(request.recruitmentDeadline)}</p></div>
-                  <div className="grid gap-3 sm:grid-cols-3"><div><label className={labelClass}>姓名</label><input className={fieldClass} name="name" required maxLength={50} /></div><div><label className={labelClass}>部门</label><input className={fieldClass} name="department" required maxLength={80} /></div><div><label className={labelClass}>企业邮箱</label><input className={fieldClass} name="email" type="email" required maxLength={120} /></div></div>
+                  <div className="grid gap-3 sm:grid-cols-3"><div><label className={labelClass}>姓名</label><input className={fieldClass} name="name" required maxLength={50} defaultValue={user.name} readOnly /></div><div><label className={labelClass}>部门</label><input className={fieldClass} name="department" required maxLength={80} defaultValue={user.department} readOnly /></div><div><label className={labelClass}>企业邮箱</label><input className={fieldClass} name="email" type="email" required maxLength={120} defaultValue={user.email} readOnly /></div></div>
                   <div className="grid gap-3 sm:grid-cols-2"><div><label className={labelClass}>意向岗位</label><input className={fieldClass} name="intendedRole" required maxLength={100} /></div><div><label className={labelClass}>每周可投入时间</label><input className={fieldClass} name="weeklyAvailability" required maxLength={200} /></div></div>
                   <div><label className={labelClass}>相关技能与项目经验</label><textarea className={fieldClass} name="skills" required rows={3} maxLength={2000} /></div><div><label className={labelClass}>报名说明</label><textarea className={fieldClass} name="statement" rows={2} maxLength={2000} /></div>
                   <button className="inline-flex items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white hover:bg-[#5b80ff]" type="submit"><UserCheck className="h-4 w-4" />提交报名</button>
                 </form>
 
                 <section className={panelClass}>
-                  <div className="flex items-end justify-between"><div><h2 className="text-2xl font-black">报名筛选</h2><p className="mt-1 text-sm text-[#6b7890]">共 {request.applications.length} 人报名，已入选 {selectedApplications.length} 人。</p></div><Users className="h-6 w-6 text-[#4870ff]" /></div>
-                  {request.applications.length > 0 ? <div className="mt-5 divide-y divide-[#e2e8f2] border-t border-[#e2e8f2]">{request.applications.map((application) => {
+                  <div className="flex items-end justify-between"><div><h2 className="text-2xl font-black">{isManager ? "报名筛选" : "我的报名"}</h2><p className="mt-1 text-sm text-[#6b7890]">{isManager ? `共 ${visibleApplications.length} 人报名，已入选 ${selectedApplications.length} 人。` : "仅显示您自己的报名状态。"}</p></div><Users className="h-6 w-6 text-[#4870ff]" /></div>
+                  {visibleApplications.length > 0 ? <div className="mt-5 divide-y divide-[#e2e8f2] border-t border-[#e2e8f2]">{visibleApplications.map((application) => {
                     const applicationMeta = applicationStatusMeta[application.status as keyof typeof applicationStatusMeta] ?? applicationStatusMeta.pending;
-                    return <article key={application.id} className="py-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-black">{application.name} <span className={`ml-2 px-2 py-0.5 text-[10px] ${applicationMeta.tone}`}>{applicationMeta.label}</span></h3><p className="mt-1 text-xs text-[#6b7890]">{application.department} · {application.email} · {application.intendedRole} · 每周 {application.weeklyAvailability}</p><p className="mt-2 text-sm leading-6 text-[#52627d]">{application.skills}</p></div><div className="flex flex-wrap gap-1">{(["selected", "reserve", "rejected", "pending"] as const).map((nextStatus) => <form key={nextStatus} action={updateApplicationStatus.bind(null, application.id, id, nextStatus)}><button className="border border-[#cbd5e6] px-2.5 py-1.5 text-[10px] font-bold text-[#52627d] hover:border-[#4870ff] hover:text-[#032a72]" type="submit">{applicationStatusMeta[nextStatus].label}</button></form>)}</div></div></article>;
+                    return <article key={application.id} className="py-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-black">{application.name} <span className={`ml-2 px-2 py-0.5 text-[10px] ${applicationMeta.tone}`}>{applicationMeta.label}</span></h3><p className="mt-1 text-xs text-[#6b7890]">{application.department} · {application.email} · {application.intendedRole} · 每周 {application.weeklyAvailability}</p><p className="mt-2 text-sm leading-6 text-[#52627d]">{application.skills}</p></div>{isManager && <div className="flex flex-wrap gap-1">{(["selected", "reserve", "rejected", "pending"] as const).map((nextStatus) => <form key={nextStatus} action={updateApplicationStatus.bind(null, application.id, id, nextStatus)}><button className="border border-[#cbd5e6] px-2.5 py-1.5 text-[10px] font-bold text-[#52627d] hover:border-[#4870ff] hover:text-[#032a72]" type="submit">{applicationStatusMeta[nextStatus].label}</button></form>)}</div>}</div></article>;
                   })}</div> : <p className="mt-6 border border-dashed border-[#cbd5e6] py-10 text-center text-sm text-[#6b7890]">暂时还没有报名记录。</p>}
                 </section>
 
-                {selectedApplications.length > 0 && (
+                {isManager && selectedApplications.length > 0 && (
                   <form action={confirmTeam.bind(null, id)} className={`${panelClass} space-y-4`}><div><h2 className="text-2xl font-black">确认项目团队</h2><p className="mt-1 text-sm leading-6 text-[#6b7890]">确认后将自动创建 AI 看板项目，并关闭本轮招募。</p></div><div><label className={labelClass}>指定项目负责人</label><select className={fieldClass} name="leadApplicationId" required defaultValue=""><option value="" disabled>请选择已入选成员</option>{selectedApplications.map((application) => <option key={application.id} value={application.id}>{application.name} · {application.department} · {application.intendedRole}</option>)}</select></div><button className="inline-flex items-center gap-2 bg-[#032a72] px-5 py-3 text-sm font-black text-white hover:bg-[#0d3d88]" type="submit"><Users className="h-4 w-4" />确认团队并进入 AI 看板</button></form>
                 )}
               </>
             )}
 
-            {request.status === "team_confirmed" && <StageAction title="启动项目开发" description="团队确认后，由项目负责人正式启动开发。" action={advanceProjectStage.bind(null, id, "developing")} button="进入开发阶段" />}
-            {request.status === "developing" && <StageAction title="提交试用评估" description="核心功能完成后，将产品交给需求方进行试用和效果验证。" action={advanceProjectStage.bind(null, id, "trial")} button="进入试用评估" />}
-            {request.status === "trial" && <StageAction title="提交项目交付" description="需求方完成试用确认后提交交付，等待 AI发展委员会结题评审。" action={advanceProjectStage.bind(null, id, "delivered_pending_review")} button="确认交付并申请结题评审" />}
+            {isManager && request.status === "team_confirmed" && <StageAction title="启动项目开发" description="团队确认后，由项目负责人正式启动开发。" action={advanceProjectStage.bind(null, id, "developing")} button="进入开发阶段" />}
+            {isManager && request.status === "developing" && <StageAction title="提交试用评估" description="核心功能完成后，将产品交给需求方进行试用和效果验证。" action={advanceProjectStage.bind(null, id, "trial")} button="进入试用评估" />}
+            {isManager && request.status === "trial" && <StageAction title="提交项目交付" description="需求方完成试用确认后提交交付，等待 AI发展委员会结题评审。" action={advanceProjectStage.bind(null, id, "delivered_pending_review")} button="确认交付并申请结题评审" />}
 
-            {request.status === "delivered_pending_review" && (
+            {request.status === "delivered_pending_review" && isCommittee && (
               <form action={scoreProject.bind(null, id)} className={`${panelClass} space-y-5`}>
                 <div><p className="font-mono text-[10px] tracking-[0.18em] text-[#032a72]">FINAL REVIEW</p><h2 className="mt-2 text-2xl font-black">AI发展委员会结题评审</h2><p className="mt-2 text-sm leading-6 text-[#6b7890]">AI发展委员会按激励政策直接确定成效系数；系统据此计算最终积分总包。</p></div>
                 <fieldset className="border border-[#d8e0ee] bg-[#fafbfd] p-4"><legend className="px-2 text-sm font-black">主要负责人信息</legend><div className="grid gap-3 sm:grid-cols-2"><div><label className={labelClass}>姓名</label><input className={fieldClass} name="leadName" required maxLength={50} defaultValue={projectLead?.name ?? request.project?.owner ?? ""} /></div><div><label className={labelClass}>部门</label><input className={fieldClass} name="leadDepartment" required maxLength={80} defaultValue={projectLead?.department ?? ""} /></div><div><label className={labelClass}>企业邮箱</label><input className={fieldClass} name="leadEmail" type="email" required maxLength={120} defaultValue={projectLead?.email ?? ""} /></div><div><label className={labelClass}>项目角色</label><input className={fieldClass} name="leadRole" required maxLength={100} defaultValue={projectLead?.role ?? "项目负责人"} /></div></div></fieldset>
@@ -167,11 +173,11 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
               </form>
             )}
 
-            {request.status === "scored_pending_allocation" && (
+            {request.status === "scored_pending_allocation" && canAllocate && (
               <PointAllocationForm action={proposePointAllocation.bind(null, id)} members={request.teamMembers.map(({ id: memberId, name, department, email, role, isLead }) => ({ id: memberId, name, department, email, role, isLead }))} finalPointPool={request.finalPointPool!} defaultProposer={projectLead?.name ?? request.project?.owner ?? ""} />
             )}
 
-            {request.status === "warranty" && (
+            {request.status === "warranty" && isCommittee && (
               <form action={completeWarranty.bind(null, id)} className={`${panelClass} space-y-4`}><div><h2 className="text-2xl font-black">完成质保并发放剩余积分</h2><p className="mt-2 text-sm text-[#6b7890]">首期积分已进入榜单。质保期为 {request.warrantyMonths} 个月，确认结束后发放剩余 30%。</p></div><div><label className={labelClass}>AI发展委员会确认人</label><input className={fieldClass} name="actor" required maxLength={80} /></div><button className="inline-flex items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white"><Award className="h-4 w-4" />完成质保并正式结题</button></form>
             )}
 
@@ -186,11 +192,13 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
               <p className="mt-2 text-sm leading-6 text-[#6b7890]">协助项目负责人协调所需资源。</p>
               {request.status === "pending_review" ? (
                 <p className="mt-4 border border-dashed border-[#cbd5e6] bg-[#fafbfd] px-3 py-3 text-sm font-bold text-[#6b7890]">待评审时指定</p>
-              ) : (
+              ) : isCommittee ? (
                 <form action={updateCommitteeAssistant.bind(null, id)} className="mt-4 space-y-3">
                   <select className={fieldClass} name="committeeAssistant" required defaultValue={request.committeeAssistant}><option value="" disabled>请选择协助人</option>{committeeAssistants.map((member) => <option key={member} value={member}>{member}</option>)}</select>
                   <button className="w-full border border-[#4870ff] px-3 py-2 text-xs font-black text-[#032a72] hover:bg-[#4870ff] hover:text-white" type="submit">保存协助人</button>
                 </form>
+              ) : (
+                <p className="mt-4 border border-[#d8e0ee] bg-[#fafbfd] px-3 py-3 text-sm font-bold text-[#032a72]">{request.committeeAssistant || "待指定"}</p>
               )}
             </section>
 

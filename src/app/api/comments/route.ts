@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createCommentSchema } from "@/lib/validators";
+import { requireUser } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
+    const user = await requireUser();
     const body = await request.json();
     const data = createCommentSchema.parse(body);
 
     const comment = await prisma.comment.create({
       data: {
         content: data.content,
-        authorName: data.authorName || "匿名用户",
+        authorName: user.name,
         postId: data.postId,
         parentId: data.parentId || null,
       },
