@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { CircleDollarSign, Plus, Trash2 } from "lucide-react";
+import type { PointAllocationActionState } from "../actions";
 
 type ExistingMember = {
   id: string;
@@ -23,15 +24,24 @@ export default function PointAllocationForm({
   members,
   finalPointPool,
   defaultProposer,
+  initialRatios = {},
+  defaultAllocationNote = "",
+  isRevision = false,
 }: {
-  action: (formData: FormData) => void | Promise<void>;
+  action: (state: PointAllocationActionState, formData: FormData) => Promise<PointAllocationActionState>;
   members: ExistingMember[];
   finalPointPool: number;
   defaultProposer: string;
+  initialRatios?: Record<string, number>;
+  defaultAllocationNote?: string;
+  isRevision?: boolean;
 }) {
   const [historicalMembers, setHistoricalMembers] = useState<HistoricalMember[]>([]);
   const [nextKey, setNextKey] = useState(1);
-  const [ratios, setRatios] = useState<Record<string, string>>({});
+  const [ratios, setRatios] = useState<Record<string, string>>(
+    Object.fromEntries(Object.entries(initialRatios).map(([memberId, ratioTenths]) => [`existing-${memberId}`, (ratioTenths / 10).toFixed(1)])),
+  );
+  const [actionState, formAction, isPending] = useActionState(action, { error: "", success: "" });
 
   const ratioTotal = useMemo(
     () => Object.values(ratios).reduce((sum, value) => sum + (Number(value) || 0), 0),
@@ -57,11 +67,11 @@ export default function PointAllocationForm({
   }
 
   return (
-    <form action={action} className={`${panelClass} space-y-5`}>
+    <form action={formAction} className={`${panelClass} space-y-5`}>
       <div>
-        <h2 className="text-2xl font-black">项目负责人确认积分分配</h2>
+        <h2 className="text-2xl font-black">{isRevision ? "修改个人积分分配" : "项目负责人确认积分分配"}</h2>
         <p className="mt-2 text-sm leading-6 text-[#6b7890]">
-          最终项目积分为 <strong className="text-[#032a72]">{finalPointPool.toLocaleString("zh-CN")} 分</strong>。可补录历史参与人员，并按实际贡献比例分配；全部人员比例合计必须为 100%。负责人确认后将直接发放首期 70% 积分并进入质保。
+          最终项目积分为 <strong className="text-[#032a72]">{finalPointPool.toLocaleString("zh-CN")} 分</strong>。可补录历史参与人员，并按实际贡献比例分配；全部人员比例合计必须为 100%。{isRevision ? "保存后，系统仅按新旧方案差额调整已发放的首期 70% 积分，不会重复发放。" : "负责人确认后将直接发放首期 70% 积分并进入质保。"}
         </p>
       </div>
 
@@ -120,11 +130,14 @@ export default function PointAllocationForm({
         <strong className="text-xl">{ratioTotal.toFixed(1)}%</strong>
       </div>
 
+      {actionState.error && <p role="alert" className="border-l-4 border-[#c94b4b] bg-[#fff1f1] px-4 py-3 text-sm font-bold text-[#8d2929]">{actionState.error}</p>}
+      {actionState.success && <p role="status" className="border-l-4 border-[#35a762] bg-[#edf9f1] px-4 py-3 text-sm font-bold text-[#246f42]">{actionState.success}</p>}
+
       <div className="grid gap-3 sm:grid-cols-2">
         <div><label className={labelClass}>方案提出人</label><input className={fieldClass} name="proposer" required maxLength={80} defaultValue={defaultProposer} /></div>
-        <div><label className={labelClass}>分配依据</label><textarea className={fieldClass} name="allocationNote" required rows={2} maxLength={2000} /></div>
+        <div><label className={labelClass}>分配依据</label><textarea className={fieldClass} name="allocationNote" required rows={2} maxLength={2000} defaultValue={defaultAllocationNote} /></div>
       </div>
-      <button disabled={Math.abs(ratioTotal - 100) >= 0.001} className="inline-flex items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white hover:bg-[#5b80ff] disabled:cursor-not-allowed disabled:bg-[#9aa7bd]"><CircleDollarSign className="h-4 w-4" />确认分配并进入质保</button>
+      <button disabled={isPending || Math.abs(ratioTotal - 100) >= 0.001} className="inline-flex items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white hover:bg-[#5b80ff] disabled:cursor-not-allowed disabled:bg-[#9aa7bd]"><CircleDollarSign className="h-4 w-4" />{isPending ? "正在保存…" : isRevision ? "保存修改并同步积分差额" : "确认分配并进入质保"}</button>
     </form>
   );
 }
