@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { committeeAssistants, effectCoefficientValues } from "@/lib/ai-project-workflow";
+import { calculatePointAllocations } from "@/lib/ai-point-allocation";
 import { attachmentSchema } from "@/lib/validators";
 import { z } from "zod";
 
@@ -340,9 +341,33 @@ export async function scoreProject(requestId: string, formData: FormData) {
   refreshWorkflow(requestId);
 }
 
-export async function proposePointAllocation(requestId: string, formData: FormData) {
-  const request = await prisma.aiDemandRequest.findUniqueOrThrow({ where: { id: requestId }, include: { teamMembers: true } });
-  if (!request.finalPointPool || request.status !== "scored_pending_allocation") throw new Error("该项目当前不能提交积分分配");
+export type PointAllocationActionState = { error: string; success: string };
+
+export async function proposePointAllocation(
+  requestId: string,
+  _previousState: PointAllocationActionState,
+  formData: FormData,
+): Promise<PointAllocationActionState> {
+  try {
+    await persistPointAllocation(requestId, formData);
+    return { error: "", success: "积分分配已保存，积分差额已同步更新" };
+  } catch (error) {
+    const message = error instanceof z.ZodError
+      ? error.issues[0]?.message
+      : error instanceof Error ? error.message : "积分分配保存失败，请稍后重试";
+    return { error: message || "积分分配信息不完整，请检查后重试", success: "" };
+  }
+}
+
+async function persistPointAllocation(requestId: string, formData: FormData) {
+  const request = await prisma.aiDemandRequest.findUniqueOrThrow({
+    where: { id: requestId },
+    include: { teamMembers: true },
+  });
+  const isRevision = request.status === "warranty";
+  if (!request.finalPointPool || (!isRevision && request.status !== "scored_pending_allocation")) {
+    throw new Error("该项目当前不能提交或修改积分分配");
+  }
   const finalPointPool = request.finalPointPool;
 
   function ratioTenths(value: FormDataEntryValue | null) {
@@ -375,7 +400,11 @@ export async function proposePointAllocation(requestId: string, formData: FormDa
   const allocationNote = z.string().trim().min(3).max(2000).parse(formData.get("allocationNote"));
 
   await prisma.$transaction(async (tx) => {
-    await tx.aiProjectPointAllocation.deleteMany({ where: { requestId } });
+    const currentRequest = await tx.aiDemandRequest.findUniqueOrThrow({ where: { id: requestId }, select: { status: true } });
+    if (currentRequest.status !== request.status) throw new Error("项目状态已发生变化，请刷新页面后重试");
+
+    const persistedAllocations = await tx.aiProjectPointAllocation.findMany({ where: { requestId } });
+    const previousAllocations = new Map(persistedAllocations.map((allocation) => [allocation.teamMemberId, allocation]));
     const allocationMembers = existingAllocations.map((allocation) => ({ member: allocation.member, ratioTenths: allocation.ratioTenths }));
     for (const historicalMember of historicalMembers) {
       const member = await tx.aiProjectTeamMember.create({
@@ -390,30 +419,39 @@ export async function proposePointAllocation(requestId: string, formData: FormDa
       });
       allocationMembers.push({ member, ratioTenths: historicalMember.ratioTenths });
     }
-    const calculated = allocationMembers.map((allocation) => {
-      const exactPoints = finalPointPool * allocation.ratioTenths / 1000;
-      return { ...allocation, proposedPoints: Math.floor(exactPoints), remainder: exactPoints - Math.floor(exactPoints) };
-    });
-    let remainingPoints = finalPointPool - calculated.reduce((sum, allocation) => sum + allocation.proposedPoints, 0);
-    for (const allocation of [...calculated].sort((a, b) => b.remainder - a.remainder)) {
-      if (remainingPoints <= 0) break;
-      allocation.proposedPoints += 1;
-      remainingPoints -= 1;
-    }
-    const targetInitial = Math.round(finalPointPool * 0.7);
-    const initialPoints = calculated.map((allocation) => Math.floor(allocation.proposedPoints * 0.7));
-    initialPoints[initialPoints.length - 1] += targetInitial - initialPoints.reduce((sum, points) => sum + points, 0);
+    const calculated = calculatePointAllocations(
+      finalPointPool,
+      allocationMembers.map((allocation) => ({ key: allocation.member.id, ratioTenths: allocation.ratioTenths })),
+    );
+    const calculatedByMemberId = new Map(calculated.map((allocation) => [allocation.key, allocation]));
 
-    for (const [index, allocation] of calculated.entries()) {
-      const memberData = allocation.member;
-      const points = initialPoints[index];
+    if (isRevision) {
+      for (const { member } of allocationMembers) {
+        const previous = previousAllocations.get(member.id);
+        const next = calculatedByMemberId.get(member.id)!;
+        const delta = next.issuedPoints - (previous?.issuedPoints ?? 0);
+        if (delta >= 0) continue;
+        const pointMember = await tx.aiPointMember.findUnique({ where: { email: member.email } });
+        if (!pointMember || pointMember.availablePoints + delta < 0 || pointMember.historicalPoints + delta < 0) {
+          throw new Error(`${member.name} 的可用积分不足，无法撤回 ${Math.abs(delta)} 分；请先恢复可用积分后再修改分配`);
+        }
+      }
+    }
+
+    await tx.aiProjectPointAllocation.deleteMany({ where: { requestId } });
+
+    for (const { member: memberData, ratioTenths: memberRatioTenths } of allocationMembers) {
+      const allocation = calculatedByMemberId.get(memberData.id)!;
+      const previous = previousAllocations.get(memberData.id);
+      const pointDelta = allocation.issuedPoints - (previous?.issuedPoints ?? 0);
       await tx.aiProjectPointAllocation.create({
         data: {
           requestId,
           teamMemberId: memberData.id,
           proposedPoints: allocation.proposedPoints,
-          issuedPoints: points,
-          warrantyPoints: allocation.proposedPoints - points,
+          ratioTenths: memberRatioTenths,
+          issuedPoints: allocation.issuedPoints,
+          warrantyPoints: allocation.warrantyPoints,
         },
       });
       let pointMember = await tx.aiPointMember.findUnique({ where: { email: memberData.email } });
@@ -425,17 +463,38 @@ export async function proposePointAllocation(requestId: string, formData: FormDa
         data: {
           name: memberData.name,
           department: memberData.department,
-          historicalPoints: { increment: points },
-          availablePoints: { increment: points },
-          completedProjects: { increment: 1 },
-          ledProjects: { increment: memberData.isLead ? 1 : 0 },
-          highImpactProjects: { increment: request.effectCoefficient && request.effectCoefficient >= 1.5 ? 1 : 0 },
+          historicalPoints: { increment: pointDelta },
+          availablePoints: { increment: pointDelta },
+          completedProjects: { increment: previous ? 0 : 1 },
+          ledProjects: { increment: previous ? 0 : memberData.isLead ? 1 : 0 },
+          highImpactProjects: { increment: previous ? 0 : request.effectCoefficient && request.effectCoefficient >= 1.5 ? 1 : 0 },
         },
       });
-      await tx.aiPointEntry.create({ data: { memberId: pointMember.id, historicalDelta: points, availableDelta: points, reason: "项目负责人完成分配，发放 70% AI 积分", projectName: request.title, operatorName: proposer } });
+      if (!isRevision || pointDelta !== 0) {
+        await tx.aiPointEntry.create({
+          data: {
+            memberId: pointMember.id,
+            historicalDelta: pointDelta,
+            availableDelta: pointDelta,
+            reason: isRevision ? "项目负责人修改分配，调整首期 70% AI 积分" : "项目负责人完成分配，发放 70% AI 积分",
+            projectName: request.title,
+            operatorName: proposer,
+          },
+        });
+      }
     }
     await tx.aiDemandRequest.update({ where: { id: requestId }, data: { status: "warranty", allocationNote, pointsApprovedBy: proposer, pointsApprovedAt: new Date() } });
-    await tx.aiWorkflowLog.create({ data: { requestId, action: "项目负责人完成积分分配并进入质保", actor: proposer, detail: `${allocationMembers.length} 人按比例分配，首期发放 ${targetInitial} 分，已自动进入积分榜` } });
+    const targetInitial = calculated.reduce((sum, allocation) => sum + allocation.issuedPoints, 0);
+    await tx.aiWorkflowLog.create({
+      data: {
+        requestId,
+        action: isRevision ? "项目负责人修改积分分配" : "项目负责人完成积分分配并进入质保",
+        actor: proposer,
+        detail: isRevision
+          ? `${allocationMembers.length} 人的分配比例已更新，首期积分按差额同步调整，首期总额仍为 ${targetInitial} 分`
+          : `${allocationMembers.length} 人按比例分配，首期发放 ${targetInitial} 分，已自动进入积分榜`,
+      },
+    });
   });
   refreshWorkflow(requestId);
 }

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import PointAllocationForm from "./PointAllocationForm";
 import { attachmentSchema, type Attachment } from "@/lib/validators";
+import { inferRatioTenths } from "@/lib/ai-point-allocation";
 
 export const dynamic = "force-dynamic";
 
@@ -87,6 +88,16 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
   const selectedApplications = request.applications.filter((application) => application.status === "selected");
   const projectLead = request.teamMembers.find((member) => member.isLead);
   const attachments = parseAttachments(request.attachments);
+  const currentAllocationRatios = inferRatioTenths(
+    request.finalPointPool ?? 0,
+    request.teamMembers
+      .filter((member) => member.allocation)
+      .map((member) => ({
+        key: member.id,
+        proposedPoints: member.allocation!.proposedPoints,
+        ratioTenths: member.allocation!.ratioTenths,
+      })),
+  );
 
   return (
     <div className="min-h-full bg-[#f7f9fc] text-[#111827]">
@@ -172,7 +183,18 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
             )}
 
             {request.status === "warranty" && (
-              <form action={completeWarranty.bind(null, id)} className={`${panelClass} space-y-4`}><div><h2 className="text-2xl font-black">完成质保并发放剩余积分</h2><p className="mt-2 text-sm text-[#6b7890]">首期积分已进入榜单。质保期为 {request.warrantyMonths} 个月，确认结束后发放剩余 30%。</p></div><div><label className={labelClass}>AI发展委员会确认人</label><input className={fieldClass} name="actor" required maxLength={80} /></div><button className="inline-flex items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white"><Award className="h-4 w-4" />完成质保并正式结题</button></form>
+              <>
+                <PointAllocationForm
+                  action={proposePointAllocation.bind(null, id)}
+                  members={request.teamMembers.map(({ id: memberId, name, department, email, role, isLead }) => ({ id: memberId, name, department, email, role, isLead }))}
+                  finalPointPool={request.finalPointPool!}
+                  defaultProposer={request.pointsApprovedBy || projectLead?.name || request.project?.owner || ""}
+                  initialRatios={currentAllocationRatios}
+                  defaultAllocationNote={request.allocationNote}
+                  isRevision
+                />
+                <form action={completeWarranty.bind(null, id)} className={`${panelClass} space-y-4`}><div><h2 className="text-2xl font-black">完成质保并发放剩余积分</h2><p className="mt-2 text-sm text-[#6b7890]">首期积分已进入榜单。质保期为 {request.warrantyMonths} 个月；如需调整个人比例，请先在上方保存修改。确认质保结束后发放剩余积分，项目结题后分配将不能再修改。</p></div><div><label className={labelClass}>AI发展委员会确认人</label><input className={fieldClass} name="actor" required maxLength={80} /></div><button className="inline-flex items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white"><Award className="h-4 w-4" />完成质保并正式结题</button></form>
+              </>
             )}
 
             {request.status === "completed" && <div className={`${panelClass} border-l-4 border-l-[#35a762]`}><CheckCircle2 className="h-8 w-8 text-[#35a762]" /><h2 className="mt-4 text-2xl font-black">项目已完成全部流程</h2><p className="mt-2 text-sm leading-6 text-[#52627d]">项目已结题，100% 积分发放完成并进入 AI 积分榜。</p><Link href="/ai-points" className="mt-4 inline-flex items-center gap-1 text-sm font-black text-[#032a72]">查看 AI 积分榜<ArrowRight className="h-4 w-4 text-[#4870ff]" /></Link></div>}
