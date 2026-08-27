@@ -1,6 +1,6 @@
 import { isAdmin } from "@/lib/auth";
 import Link from "next/link";
-import { LayoutDashboard, FileText, Calendar, MessageCircle, Tags, LogOut, BrainCircuit } from "lucide-react";
+import { LayoutDashboard, FileText, Calendar, MessageCircle, Tags, LogOut, BrainCircuit, Users, ShieldCheck } from "lucide-react";
 
 export default async function AdminLayout({
   children,
@@ -34,6 +34,12 @@ export default async function AdminLayout({
               </Link>
               <Link href="/admin/categories" className="flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:text-primary hover:bg-primary-light rounded-lg transition-colors">
                 <Tags className="w-4 h-4" /> 分类管理
+              </Link>
+              <Link href="/admin/users" className="flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:text-primary hover:bg-primary-light rounded-lg transition-colors">
+                <Users className="w-4 h-4" /> 账号与角色
+              </Link>
+              <Link href="/admin/audit" className="flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:text-primary hover:bg-primary-light rounded-lg transition-colors">
+                <ShieldCheck className="w-4 h-4" /> 安全审计
               </Link>
               <div className="pt-2 mt-2 border-t border-border-light">
                 <form action="/api/admin/logout" method="POST">

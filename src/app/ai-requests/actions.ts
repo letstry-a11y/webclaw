@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { committeeAssistants, effectCoefficientValues } from "@/lib/ai-project-workflow";
 import { attachmentSchema } from "@/lib/validators";
 import { z } from "zod";
+import { requireUser, type AuthUser } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit";
 
 const emailSchema = z.string().trim().email().max(120).transform((value) => value.toLowerCase());
 const optionalDate = z.string().trim().transform((value) => value ? new Date(`${value}T00:00:00+08:00`) : null);
@@ -67,6 +69,24 @@ function refreshWorkflow(requestId?: string) {
   if (requestId) revalidatePath(`/ai-requests/${requestId}`);
 }
 
+async function requireRequestManager(requestId: string, user?: AuthUser) {
+  const actor = user || await requireUser();
+  if (actor.role === "admin" || actor.role === "committee") return actor;
+  const request = await prisma.aiDemandRequest.findUniqueOrThrow({
+    where: { id: requestId }, select: { requesterEmail: true, teamMembers: { where: { isLead: true }, select: { email: true } } },
+  });
+  if (request.requesterEmail.toLowerCase() === actor.email || request.teamMembers.some((member) => member.email.toLowerCase() === actor.email)) return actor;
+  throw new Error("只有需求方、项目负责人或AI发展委员会可以执行该操作");
+}
+
+async function requireProjectLead(requestId: string) {
+  const actor = await requireUser();
+  if (actor.role === "admin" || actor.role === "committee") return actor;
+  const lead = await prisma.aiProjectTeamMember.findFirst({ where: { requestId, isLead: true }, select: { email: true } });
+  if (lead?.email.toLowerCase() === actor.email) return actor;
+  throw new Error("只有项目负责人可以提交个人积分分配");
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -110,8 +130,12 @@ function recruitmentContent(request: {
 }
 
 export async function createAiRequest(formData: FormData) {
+  const user = await requireUser();
   const data = requestSchema.parse(Object.fromEntries(formData));
-  const { attachments, ...requestData } = data;
+  const { attachments, ...submitted } = data;
+  const requestData = user.role === "employee" ? {
+    ...submitted, requesterName: user.name, requesterDepartment: user.department, requesterEmail: user.email,
+  } : submitted;
   const request = await prisma.aiDemandRequest.create({
     data: {
       ...requestData,
@@ -119,12 +143,15 @@ export async function createAiRequest(formData: FormData) {
       logs: { create: { action: "需求已提交", actor: requestData.requesterName, detail: `由 ${requestData.requesterDepartment} 提交，等待 AI发展委员会评审` } },
     },
   });
+  await writeAuditLog(user, "提交AI应用需求", { targetType: "AiDemandRequest", targetId: request.id, detail: request.title });
   refreshWorkflow(request.id);
   redirect(`/ai-requests/${request.id}`);
 }
 
 export async function reviewAndPublish(requestId: string, formData: FormData) {
-  const review = reviewSchema.parse(Object.fromEntries(formData));
+  const user = await requireUser(["committee", "admin"]);
+  const parsedReview = reviewSchema.parse(Object.fromEntries(formData));
+  const review = { ...parsedReview, reviewedBy: user.name };
   const request = await prisma.aiDemandRequest.findUniqueOrThrow({ where: { id: requestId } });
   if (request.status !== "pending_review") throw new Error("该需求当前不能重复评审发布");
 
@@ -160,10 +187,12 @@ export async function reviewAndPublish(requestId: string, formData: FormData) {
       data: { requestId, action: "AI发展委员会评审通过并发布招募", actor: review.reviewedBy, detail: `${review.projectLevel} 级项目，基础积分总包 ${review.basePointPool} 分，协助人 ${review.committeeAssistant}` },
     });
   });
+  await writeAuditLog(user, "评审通过并发布招募", { targetType: "AiDemandRequest", targetId: requestId, detail: `${review.projectLevel}级 / ${review.basePointPool}积分` });
   refreshWorkflow(requestId);
 }
 
 export async function updateCommitteeAssistant(requestId: string, formData: FormData) {
+  const user = await requireUser(["committee", "admin"]);
   const committeeAssistant = committeeAssistantSchema.parse(formData.get("committeeAssistant"));
   const request = await prisma.aiDemandRequest.findUniqueOrThrow({ where: { id: requestId }, include: { activityPost: true } });
   if (request.status === "pending_review") throw new Error("请在需求评审时指定AI发展委员会协助人");
@@ -179,14 +208,17 @@ export async function updateCommitteeAssistant(requestId: string, formData: Form
       });
     }
     await tx.aiWorkflowLog.create({
-      data: { requestId, action: "更新AI发展委员会协助人", actor: "AI发展委员会", detail: `${previousAssistant} → ${committeeAssistant}` },
+      data: { requestId, action: "更新AI发展委员会协助人", actor: user.name, detail: `${previousAssistant} → ${committeeAssistant}` },
     });
   });
+  await writeAuditLog(user, "更新委员会协助人", { targetType: "AiDemandRequest", targetId: requestId, detail: committeeAssistant });
   refreshWorkflow(requestId);
 }
 
 export async function submitApplication(requestId: string, formData: FormData) {
-  const data = applicationSchema.parse(Object.fromEntries(formData));
+  const user = await requireUser();
+  const submitted = applicationSchema.parse(Object.fromEntries(formData));
+  const data = { ...submitted, name: user.name, department: user.department, email: user.email };
   const request = await prisma.aiDemandRequest.findUniqueOrThrow({ where: { id: requestId } });
   if (request.status !== "recruiting") throw new Error("该项目当前不在招募阶段");
   if (request.recruitmentDeadline && request.recruitmentDeadline < new Date()) throw new Error("报名已截止");
@@ -199,10 +231,12 @@ export async function submitApplication(requestId: string, formData: FormData) {
     });
     await tx.aiWorkflowLog.create({ data: { requestId, action: "收到项目报名", actor: data.name, detail: `${data.department} · ${data.intendedRole}` } });
   });
+  await writeAuditLog(user, "报名AI项目", { targetType: "AiDemandRequest", targetId: requestId, detail: data.intendedRole });
   refreshWorkflow(requestId);
 }
 
 export async function updateApplicationStatus(applicationId: string, requestId: string, status: string, _formData: FormData) {
+  const user = await requireRequestManager(requestId);
   void _formData;
   const nextStatus = z.enum(["pending", "reserve", "selected", "rejected"]).parse(status);
   const request = await prisma.aiDemandRequest.findUniqueOrThrow({ where: { id: requestId } });
@@ -210,11 +244,13 @@ export async function updateApplicationStatus(applicationId: string, requestId: 
   const application = await prisma.aiProjectApplication.findUniqueOrThrow({ where: { id: applicationId } });
   if (application.requestId !== requestId) throw new Error("报名记录与当前项目不匹配");
   await prisma.aiProjectApplication.update({ where: { id: applicationId }, data: { status: nextStatus } });
-  await prisma.aiWorkflowLog.create({ data: { requestId, action: "更新报名状态", actor: "需求方/项目负责人", detail: `${application.name}：${nextStatus}` } });
+  await prisma.aiWorkflowLog.create({ data: { requestId, action: "更新报名状态", actor: user.name, detail: `${application.name}：${nextStatus}` } });
+  await writeAuditLog(user, "更新报名状态", { targetType: "AiProjectApplication", targetId: applicationId, detail: nextStatus });
   refreshWorkflow(requestId);
 }
 
 export async function confirmTeam(requestId: string, formData: FormData) {
+  const user = await requireRequestManager(requestId);
   const leadApplicationId = z.string().min(1).parse(formData.get("leadApplicationId"));
   const request = await prisma.aiDemandRequest.findUniqueOrThrow({
     where: { id: requestId },
@@ -256,6 +292,7 @@ export async function confirmTeam(requestId: string, formData: FormData) {
     await tx.aiDemandRequest.update({ where: { id: requestId }, data: { status: "team_confirmed" } });
     await tx.aiWorkflowLog.create({ data: { requestId, action: "团队已确认并进入 AI 看板", actor: lead.name, detail: `团队共 ${request.applications.length} 人` } });
   });
+  await writeAuditLog(user, "确认项目团队", { targetType: "AiDemandRequest", targetId: requestId, detail: lead.name });
   refreshWorkflow(requestId);
 }
 
@@ -266,8 +303,10 @@ const transitions = {
 } as const;
 
 export async function advanceProjectStage(requestId: string, targetStatus: string, formData: FormData) {
+  const user = await requireRequestManager(requestId);
   const target = z.enum(["developing", "trial", "delivered_pending_review"]).parse(targetStatus);
-  const actor = z.string().trim().min(1).max(80).parse(formData.get("actor"));
+  void formData;
+  const actor = user.name;
   const transition = transitions[target];
   const request = await prisma.aiDemandRequest.findUniqueOrThrow({ where: { id: requestId }, include: { project: true } });
   if (request.status !== transition.from || !request.project) throw new Error("项目当前状态不允许执行该操作");
@@ -276,11 +315,13 @@ export async function advanceProjectStage(requestId: string, targetStatus: strin
     prisma.aiProject.update({ where: { id: request.project.id }, data: { status: transition.projectStatus } }),
     prisma.aiWorkflowLog.create({ data: { requestId, action: transition.action, actor } }),
   ]);
+  await writeAuditLog(user, "推进项目阶段", { targetType: "AiDemandRequest", targetId: requestId, detail: target });
   refreshWorkflow(requestId);
 }
 
 export async function scoreProject(requestId: string, formData: FormData) {
-  const data = z.object({
+  const user = await requireUser(["committee", "admin"]);
+  const parsedData = z.object({
     effectCoefficient: z.coerce.number().refine(
       (value) => effectCoefficientValues.some((coefficient) => coefficient === value),
       "请选择激励政策规定的成效系数",
@@ -292,6 +333,7 @@ export async function scoreProject(requestId: string, formData: FormData) {
     reviewedBy: z.string().trim().min(1).max(80),
     comment: z.string().trim().min(3).max(2000),
   }).parse(Object.fromEntries(formData));
+  const data = { ...parsedData, reviewedBy: user.name };
   const request = await prisma.aiDemandRequest.findUniqueOrThrow({ where: { id: requestId }, include: { teamMembers: true, project: true } });
   if (request.status !== "delivered_pending_review" || !request.basePointPool) throw new Error("该项目当前不能进行结题评分");
   const finalPointPool = Math.round(request.basePointPool * data.effectCoefficient);
@@ -337,10 +379,12 @@ export async function scoreProject(requestId: string, formData: FormData) {
       },
     });
   });
+  await writeAuditLog(user, "确认项目成效系数", { targetType: "AiDemandRequest", targetId: requestId, detail: String(data.effectCoefficient) });
   refreshWorkflow(requestId);
 }
 
 export async function proposePointAllocation(requestId: string, formData: FormData) {
+  const user = await requireProjectLead(requestId);
   const request = await prisma.aiDemandRequest.findUniqueOrThrow({ where: { id: requestId }, include: { teamMembers: true } });
   if (!request.finalPointPool || request.status !== "scored_pending_allocation") throw new Error("该项目当前不能提交积分分配");
   const finalPointPool = request.finalPointPool;
@@ -371,7 +415,7 @@ export async function proposePointAllocation(requestId: string, formData: FormDa
   const totalRatioTenths = [...existingAllocations, ...historicalMembers].reduce((sum, allocation) => sum + allocation.ratioTenths, 0);
   if (totalRatioTenths !== 1000) throw new Error("个人积分分配比例合计必须等于 100%");
 
-  const proposer = z.string().trim().min(1).max(80).parse(formData.get("proposer"));
+  const proposer = user.name;
   const allocationNote = z.string().trim().min(3).max(2000).parse(formData.get("allocationNote"));
 
   await prisma.$transaction(async (tx) => {
@@ -437,11 +481,14 @@ export async function proposePointAllocation(requestId: string, formData: FormDa
     await tx.aiDemandRequest.update({ where: { id: requestId }, data: { status: "warranty", allocationNote, pointsApprovedBy: proposer, pointsApprovedAt: new Date() } });
     await tx.aiWorkflowLog.create({ data: { requestId, action: "项目负责人完成积分分配并进入质保", actor: proposer, detail: `${allocationMembers.length} 人按比例分配，首期发放 ${targetInitial} 分，已自动进入积分榜` } });
   });
+  await writeAuditLog(user, "提交个人积分分配", { targetType: "AiDemandRequest", targetId: requestId, detail: allocationNote });
   refreshWorkflow(requestId);
 }
 
 export async function completeWarranty(requestId: string, formData: FormData) {
-  const actor = z.string().trim().min(1).max(80).parse(formData.get("actor"));
+  const user = await requireUser(["committee", "admin"]);
+  void formData;
+  const actor = user.name;
   const request = await prisma.aiDemandRequest.findUniqueOrThrow({ where: { id: requestId }, include: { allocations: { include: { teamMember: true } }, project: true } });
   if (request.status !== "warranty") throw new Error("该项目当前不在质保积分发放阶段");
   const warrantyTotal = request.allocations.reduce((sum, allocation) => sum + allocation.warrantyPoints, 0);
@@ -458,5 +505,6 @@ export async function completeWarranty(requestId: string, formData: FormData) {
     if (request.project) await tx.aiProject.update({ where: { id: request.project.id }, data: { status: "delivered" } });
     await tx.aiWorkflowLog.create({ data: { requestId, action: "质保完成并发放剩余积分", actor, detail: `发放 ${warrantyTotal} 分，项目正式结题` } });
   });
+  await writeAuditLog(user, "完成质保并发放积分", { targetType: "AiDemandRequest", targetId: requestId, detail: String(warrantyTotal) });
   refreshWorkflow(requestId);
 }

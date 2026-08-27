@@ -12,7 +12,8 @@
     "db:studio": "npx prisma studio",
     "analytics:report": "node scripts/analytics-report.cjs",
     "analytics:scheduler": "node scripts/weekly-analytics-scheduler.cjs",
-    "test:analytics": "TZ=Asia/Shanghai node --test scripts/analytics-report.test.cjs"
+    "test:analytics": "TZ=Asia/Shanghai node --test scripts/analytics-report.test.cjs",
+    "test:auth": "tsx --test src/lib/auth.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -31,7 +32,8 @@
     "lowlight": "^3.3.0",
     "lucide-react": "^1.8.0",
     "marked": "^18.0.1",
-    "next": "16.2.4",
+    "next": "16.3.3",
+    "nodemailer": "^9.0.5",
     "prisma": "^5.22.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -42,11 +44,12 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/turndown": "^5.0.6",
     "eslint": "^9",
-    "eslint-config-next": "16.2.4",
+    "eslint-config-next": "16.3.3",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/auth";
-import { getFingerprint } from "@/lib/fingerprint";
+import { getCurrentUser } from "@/lib/auth";
 import { attachmentSchema } from "@/lib/validators";
 import { generateExcerpt } from "@/lib/utils";
 import { z } from "zod";
@@ -34,8 +34,8 @@ async function canWrite(postId: string): Promise<{ allowed: boolean; status: num
   });
   if (!post) return { allowed: false, status: 404 };
   if (await isAdmin()) return { allowed: true, status: 200, post };
-  const fp = await getFingerprint();
-  if (post.authorFingerprint && post.authorFingerprint === fp) {
+  const user = await getCurrentUser();
+  if (user && post.authorFingerprint === `user:${user.id}`) {
     return { allowed: true, status: 200, post };
   }
   return { allowed: false, status: 403, post };

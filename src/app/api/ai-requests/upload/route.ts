@@ -2,6 +2,8 @@ import { randomBytes } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
+import { requireUser } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit";
 
 export const runtime = "nodejs";
 
@@ -33,6 +35,7 @@ function withinUploadLimit(ip: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const user = await requireUser();
   const ip = getIp(request);
   if (!withinUploadLimit(ip)) {
     return NextResponse.json({ error: "上传过于频繁，请稍后再试" }, { status: 429 });
@@ -61,16 +64,18 @@ export async function POST(request: NextRequest) {
   const now = new Date();
   const year = String(now.getFullYear());
   const month = String(now.getMonth() + 1).padStart(2, "0");
-  const relativeDir = path.join("uploads", "ai-requests", year, month);
-  const absoluteDir = path.join(process.cwd(), "public", relativeDir);
+  const relativeDir = path.join("private-uploads", "ai-requests", year, month);
+  const absoluteDir = path.join(process.cwd(), "data", relativeDir);
   await mkdir(absoluteDir, { recursive: true });
 
   const filename = `${randomBytes(16).toString("hex")}${ext}`;
   const absolutePath = path.join(absoluteDir, filename);
   await writeFile(absolutePath, Buffer.from(await file.arrayBuffer()), { mode: 0o644 });
 
+  await writeAuditLog(user, "上传AI需求附件", { targetType: "Attachment", targetId: filename, detail: file.name.slice(0, 200) });
+
   return NextResponse.json({
-    url: `/${path.posix.join(...relativeDir.split(path.sep), filename)}`,
+    url: `/api/ai-requests/attachments/${filename}?year=${year}&month=${month}&name=${encodeURIComponent(file.name.slice(0, 200))}`,
     name: file.name.slice(0, 200),
     size: file.size,
     type: file.type || "application/octet-stream",
