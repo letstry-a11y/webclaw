@@ -32,7 +32,7 @@ export function calculatePointAllocations(finalPointPool: number, allocations: A
   }
 
   const targetInitial = Math.round(finalPointPool * 0.7);
-  const issuedPoints = calculated.map((allocation) => Math.floor(allocation.proposedPoints * 0.7));
+  const issuedPoints = calculated.map((allocation) => Math.floor(allocation.proposedPoints * 7 / 10));
   issuedPoints[issuedPoints.length - 1] += targetInitial - issuedPoints.reduce((sum, points) => sum + points, 0);
 
   return calculated.map((allocation, index) => ({

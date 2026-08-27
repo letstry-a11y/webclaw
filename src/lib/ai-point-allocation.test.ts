@@ -12,6 +12,17 @@ test("calculates a complete point pool and 70/30 release", () => {
   assert.equal(result.reduce((sum, item) => sum + item.warrantyPoints, 0), 300);
 });
 
+test("does not lose a point to floating-point rounding", () => {
+  const result = calculatePointAllocations(1000, [
+    { key: "lead", ratioTenths: 700 },
+    { key: "member", ratioTenths: 300 },
+  ]);
+  assert.deepEqual(result.map(({ issuedPoints, warrantyPoints }) => ({ issuedPoints, warrantyPoints })), [
+    { issuedPoints: 490, warrantyPoints: 210 },
+    { issuedPoints: 210, warrantyPoints: 90 },
+  ]);
+});
+
 test("rejects ratios that do not total 100 percent", () => {
   assert.throws(
     () => calculatePointAllocations(1000, [{ key: "lead", ratioTenths: 999 }]),
