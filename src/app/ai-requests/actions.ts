@@ -377,7 +377,16 @@ async function persistPointAllocation(requestId: string, formData: FormData) {
     return tenths;
   }
 
-  const existingAllocations = request.teamMembers.map((member) => ({
+  const requestedMemberIds = formData.getAll("existingMemberId").map((value) => z.string().min(1).parse(value));
+  if (new Set(requestedMemberIds).size !== requestedMemberIds.length) throw new Error("参与人员信息重复，请刷新页面后重试");
+  const requestMemberIds = new Set(request.teamMembers.map((member) => member.id));
+  if (requestedMemberIds.some((memberId) => !requestMemberIds.has(memberId))) throw new Error("参与人员信息无效，请刷新页面后重试");
+  const retainedMembers = request.teamMembers.filter((member) => requestedMemberIds.includes(member.id));
+  const removedMembers = request.teamMembers.filter((member) => !requestedMemberIds.includes(member.id));
+  if (removedMembers.some((member) => member.isLead)) throw new Error("主要负责人不能从积分分配中删除");
+  if (!isRevision && removedMembers.length > 0) throw new Error("首次分配不能删除已确认的项目成员");
+
+  const existingAllocations = retainedMembers.map((member) => ({
     member,
     ratioTenths: ratioTenths(formData.get(`ratio-${member.id}`)),
   }));
@@ -426,19 +435,49 @@ async function persistPointAllocation(requestId: string, formData: FormData) {
     const calculatedByMemberId = new Map(calculated.map((allocation) => [allocation.key, allocation]));
 
     if (isRevision) {
-      for (const { member } of allocationMembers) {
+      for (const member of request.teamMembers) {
         const previous = previousAllocations.get(member.id);
-        const next = calculatedByMemberId.get(member.id)!;
-        const delta = next.issuedPoints - (previous?.issuedPoints ?? 0);
+        const next = calculatedByMemberId.get(member.id);
+        const delta = (next?.issuedPoints ?? 0) - (previous?.issuedPoints ?? 0);
         if (delta >= 0) continue;
         const pointMember = await tx.aiPointMember.findUnique({ where: { email: member.email } });
         if (!pointMember || pointMember.availablePoints + delta < 0 || pointMember.historicalPoints + delta < 0) {
           throw new Error(`${member.name} 的可用积分不足，无法撤回 ${Math.abs(delta)} 分；请先恢复可用积分后再修改分配`);
         }
+        if (!next && previous && (pointMember.completedProjects < 1 || (request.effectCoefficient && request.effectCoefficient >= 1.5 && pointMember.highImpactProjects < 1))) {
+          throw new Error(`${member.name} 的积分档案不完整，暂时不能删除；请联系 AI发展委员会核对`);
+        }
       }
     }
 
     await tx.aiProjectPointAllocation.deleteMany({ where: { requestId } });
+
+    for (const removedMember of removedMembers) {
+      const previous = previousAllocations.get(removedMember.id);
+      if (previous) {
+        const pointMember = await tx.aiPointMember.findUniqueOrThrow({ where: { email: removedMember.email } });
+        await tx.aiPointMember.update({
+          where: { id: pointMember.id },
+          data: {
+            historicalPoints: { decrement: previous.issuedPoints },
+            availablePoints: { decrement: previous.issuedPoints },
+            completedProjects: { decrement: 1 },
+            highImpactProjects: { decrement: request.effectCoefficient && request.effectCoefficient >= 1.5 ? 1 : 0 },
+          },
+        });
+        await tx.aiPointEntry.create({
+          data: {
+            memberId: pointMember.id,
+            historicalDelta: -previous.issuedPoints,
+            availableDelta: -previous.issuedPoints,
+            reason: "项目负责人删除参与人，撤回首期 70% AI 积分",
+            projectName: request.title,
+            operatorName: proposer,
+          },
+        });
+      }
+      await tx.aiProjectTeamMember.delete({ where: { id: removedMember.id } });
+    }
 
     for (const { member: memberData, ratioTenths: memberRatioTenths } of allocationMembers) {
       const allocation = calculatedByMemberId.get(memberData.id)!;
@@ -491,7 +530,7 @@ async function persistPointAllocation(requestId: string, formData: FormData) {
         action: isRevision ? "项目负责人修改积分分配" : "项目负责人完成积分分配并进入质保",
         actor: proposer,
         detail: isRevision
-          ? `${allocationMembers.length} 人的分配比例已更新，首期积分按差额同步调整，首期总额仍为 ${targetInitial} 分`
+          ? `${allocationMembers.length} 人的分配方案已更新${removedMembers.length ? `，删除 ${removedMembers.length} 人` : ""}，首期积分按差额同步调整，首期总额仍为 ${targetInitial} 分`
           : `${allocationMembers.length} 人按比例分配，首期发放 ${targetInitial} 分，已自动进入积分榜`,
       },
     });

@@ -185,6 +185,7 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
             {request.status === "warranty" && (
               <>
                 <PointAllocationForm
+                  key={request.teamMembers.map((member) => member.id).join("|")}
                   action={proposePointAllocation.bind(null, id)}
                   members={request.teamMembers.map(({ id: memberId, name, department, email, role, isLead }) => ({ id: memberId, name, department, email, role, isLead }))}
                   finalPointPool={request.finalPointPool!}

@@ -38,14 +38,20 @@ export default function PointAllocationForm({
 }) {
   const [historicalMembers, setHistoricalMembers] = useState<HistoricalMember[]>([]);
   const [nextKey, setNextKey] = useState(1);
+  const [visibleMemberIds, setVisibleMemberIds] = useState(() => members.map((member) => member.id));
   const [ratios, setRatios] = useState<Record<string, string>>(
     Object.fromEntries(Object.entries(initialRatios).map(([memberId, ratioTenths]) => [`existing-${memberId}`, (ratioTenths / 10).toFixed(1)])),
   );
   const [actionState, formAction, isPending] = useActionState(action, { error: "", success: "" });
+  const visibleMembers = members.filter((member) => visibleMemberIds.includes(member.id));
+  const removedMembers = members.filter((member) => !visibleMemberIds.includes(member.id));
 
   const ratioTotal = useMemo(
-    () => Object.values(ratios).reduce((sum, value) => sum + (Number(value) || 0), 0),
-    [ratios],
+    () => [
+      ...visibleMemberIds.map((memberId) => ratios[`existing-${memberId}`]),
+      ...historicalMembers.map((member) => ratios[`new-${member.key}`]),
+    ].reduce((sum, value) => sum + (Number(value) || 0), 0),
+    [historicalMembers, ratios, visibleMemberIds],
   );
 
   function updateRatio(key: string, value: string) {
@@ -66,6 +72,18 @@ export default function PointAllocationForm({
     });
   }
 
+  function removeExistingMember(memberId: string) {
+    setVisibleMemberIds((current) => current.filter((id) => id !== memberId));
+  }
+
+  function restoreExistingMember(memberId: string) {
+    setVisibleMemberIds((current) => [...current, memberId]);
+    setRatios((current) => ({
+      ...current,
+      [`existing-${memberId}`]: initialRatios[memberId] ? (initialRatios[memberId] / 10).toFixed(1) : "",
+    }));
+  }
+
   return (
     <form action={formAction} className={`${panelClass} space-y-5`}>
       <div>
@@ -76,11 +94,12 @@ export default function PointAllocationForm({
       </div>
 
       <div className="border-y border-[#e2e8f2]">
-        {members.map((member) => {
+        {visibleMembers.map((member) => {
           const ratioKey = `existing-${member.id}`;
           const ratio = Number(ratios[ratioKey]) || 0;
           return (
             <div key={member.id} className="grid gap-3 border-b border-[#e2e8f2] py-4 last:border-b-0 sm:grid-cols-[1fr_160px_140px] sm:items-end">
+              <input type="hidden" name="existingMemberId" value={member.id} />
               <div>
                 <strong>{member.name}</strong>
                 <span className="ml-2 text-xs text-[#6b7890]">{member.department} · {member.role}{member.isLead ? " · 主要负责人" : ""}</span>
@@ -90,15 +109,20 @@ export default function PointAllocationForm({
                 <label className={labelClass}>分配比例（%）</label>
                 <input className={fieldClass} name={`ratio-${member.id}`} type="number" min="0.1" max="100" step="0.1" required value={ratios[ratioKey] ?? ""} onChange={(event) => updateRatio(ratioKey, event.target.value)} placeholder="0.1–100" />
               </div>
-              <div className="pb-2 text-right text-sm font-black text-[#032a72]">约 {Math.round(finalPointPool * ratio / 100).toLocaleString("zh-CN")} 分</div>
+              <div className="flex items-center justify-end gap-3 pb-2 text-right text-sm font-black text-[#032a72]">
+                <span>约 {Math.round(finalPointPool * ratio / 100).toLocaleString("zh-CN")} 分</span>
+                {isRevision && !member.isLead && <button type="button" onClick={() => removeExistingMember(member.id)} aria-label={`删除参与人 ${member.name}`} className="text-[#9b3030] hover:text-[#751f1f]"><Trash2 className="h-4 w-4" /></button>}
+              </div>
             </div>
           );
         })}
       </div>
 
+      {removedMembers.length > 0 && <div className="border-l-4 border-[#e9bd71] bg-[#fff7e8] px-4 py-3"><p className="text-sm font-bold text-[#70511f]">待删除参与人</p><div className="mt-2 flex flex-wrap gap-2">{removedMembers.map((member) => <button key={member.id} type="button" onClick={() => restoreExistingMember(member.id)} className="border border-[#d5ae6b] bg-white px-3 py-1.5 text-xs font-bold text-[#70511f] hover:border-[#9a6a1e]">{member.name} · 撤销删除</button>)}</div><p className="mt-2 text-xs leading-5 text-[#80663a]">保存后将撤回其已发放积分并移出项目团队；如可用积分不足，系统会阻止删除。</p></div>}
+
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div><h3 className="text-lg font-black">补录历史参与人员</h3><p className="mt-1 text-xs text-[#6b7890]">适用于项目早于社区流程启动、成员未经过线上报名的情况。</p></div>
+          <div><h3 className="text-lg font-black">增加参与人员</h3><p className="mt-1 text-xs text-[#6b7890]">可增加遗漏的历史成员或后续加入项目的参与人。</p></div>
           <button className="inline-flex items-center gap-2 border border-[#4870ff] px-4 py-2 text-sm font-black text-[#032a72] hover:bg-[#eef2ff]" type="button" onClick={addHistoricalMember}><Plus className="h-4 w-4" />增加人员</button>
         </div>
 
