@@ -94,7 +94,7 @@ export default function EditorToolbar({
   const iconSize = "w-4 h-4";
 
   return (
-    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 px-2 py-2 border-b border-border bg-white/90 backdrop-blur-sm">
+    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 px-2 py-2 border-b border-border bg-white/90 text-[#44546d] backdrop-blur-sm">
       <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive("bold")} disabled={isMd} title="加粗 ⌘B">
         <Bold className={iconSize} />
       </ToolbarButton>
@@ -161,7 +161,7 @@ export default function EditorToolbar({
             "flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md border transition-colors",
             isMd
               ? "bg-primary text-white border-primary hover:bg-primary-hover"
-              : "border-border text-text-secondary hover:bg-bg hover:text-text-primary"
+              : "border-border text-[#44546d] hover:bg-[#eef3fb] hover:text-[#111827]"
           )}
         >
           <FileCode className="w-3.5 h-3.5" />
