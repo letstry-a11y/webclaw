@@ -138,12 +138,18 @@ export default function TiptapEditor({ content = "", onChange, placeholder }: Ti
     return markdown.trim() ? markdownToHtml(markdown) : "";
   }, [mode, markdown]);
 
-  if (!editor) return null;
+  if (!editor) {
+    return (
+      <div className="flex min-h-[280px] items-center justify-center rounded-xl border border-border bg-white text-sm text-[#52627d]" role="status">
+        编辑器加载中…
+      </div>
+    );
+  }
 
   return (
     <div
       className={cn(
-        "bg-white transition-shadow",
+        "bg-white text-[#111827] transition-shadow",
         fullscreen
           ? "fixed inset-0 z-50 flex flex-col rounded-none border-0"
           : "border border-border rounded-xl overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20"
@@ -185,7 +191,7 @@ export default function TiptapEditor({ content = "", onChange, placeholder }: Ti
             onChange={(e) => handleMarkdownChange(e.target.value)}
             placeholder="# 标题&#10;&#10;在此处用 Markdown 语法书写..."
             spellCheck={false}
-            className="w-full h-full px-4 py-3 text-sm font-mono leading-relaxed bg-white border-0 md:border-r border-b md:border-b-0 border-border-light focus:outline-none resize-none"
+            className="h-full w-full resize-none border-0 border-b border-border-light bg-white px-4 py-3 font-mono text-sm leading-relaxed text-[#111827] caret-[#111827] placeholder:text-[#8491a8] focus:outline-none md:border-r md:border-b-0"
           />
           <div
             className="post-content px-4 py-3 bg-bg/30 overflow-auto text-sm h-full"

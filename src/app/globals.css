@@ -60,6 +60,8 @@ body::before {
 }
 
 .tiptap {
+  color: #111827;
+  caret-color: #111827;
   outline: none;
   min-height: 100%;
   padding: 1.25rem 1.5rem;
@@ -88,7 +90,7 @@ body::before {
   border-left: 4px solid var(--color-primary);
   padding-left: 1rem;
   margin: 1em 0;
-  color: var(--color-text-secondary);
+  color: #52627d;
   font-style: italic;
 }
 
@@ -136,7 +138,7 @@ body::before {
 }
 
 .tiptap p.is-editor-empty:first-child::before {
-  color: var(--color-text-tertiary);
+  color: #8491a8;
   content: attr(data-placeholder);
   float: left;
   height: 0;

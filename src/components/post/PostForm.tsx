@@ -185,6 +185,14 @@ export default function PostForm({ mode, initial }: Props) {
         </div>
       </div>
 
+      {error && (
+        <div className="sticky top-[65px] z-20 mx-auto mt-3 max-w-6xl px-4 sm:px-6" role="alert" aria-live="assertive">
+          <div className="border border-[#f0b7b7] bg-[#fff4f4] px-4 py-3 text-sm font-semibold text-[#a52323] shadow-lg">
+            {error}
+          </div>
+        </div>
+      )}
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         <input
           type="text"
@@ -295,12 +303,6 @@ export default function PostForm({ mode, initial }: Props) {
             </div>
           </div>
         </section>
-
-        {error && (
-          <div className="mb-6 px-4 py-3 text-sm text-accent bg-accent/10 border border-accent/20 rounded-lg">
-            {error}
-          </div>
-        )}
 
         <div className="sm:hidden flex justify-end">
           <button
