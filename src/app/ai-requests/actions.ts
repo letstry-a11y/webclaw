@@ -12,15 +12,15 @@ const emailSchema = z.string().trim().email().max(120).transform((value) => valu
 const optionalDate = z.string().trim().transform((value) => value ? new Date(`${value}T00:00:00+08:00`) : null);
 
 const requestSchema = z.object({
-  title: z.string().trim().min(3).max(120),
-  requesterName: z.string().trim().min(1).max(50),
-  requesterDepartment: z.string().trim().min(1).max(80),
+  title: z.string().trim().min(3, "需求名称至少填写 3 个字符").max(120),
+  requesterName: z.string().trim().min(1, "请填写需求方姓名").max(50),
+  requesterDepartment: z.string().trim().min(1, "请填写需求部门").max(80),
   requesterEmail: emailSchema,
-  background: z.string().trim().min(10).max(3000),
-  currentProblem: z.string().trim().min(10).max(3000),
-  desiredFunctions: z.string().trim().min(10).max(3000),
-  businessValue: z.string().trim().min(10).max(3000),
-  expectedDeliverables: z.string().trim().min(3).max(2000),
+  background: z.string().trim().min(10, "业务背景至少填写 10 个字符").max(3000),
+  currentProblem: z.string().trim().min(10, "当前问题至少填写 10 个字符").max(3000),
+  desiredFunctions: z.string().trim().min(10, "希望实现的功能至少填写 10 个字符").max(3000),
+  businessValue: z.string().trim().min(10, "预期业务价值至少填写 10 个字符").max(3000),
+  expectedDeliverables: z.string().trim().min(3, "预期交付成果至少填写 3 个字符").max(2000),
   targetDate: optionalDate,
   availableResources: z.string().trim().max(2000),
   attachments: z.string().max(20000).transform((value, context) => {
@@ -32,9 +32,16 @@ const requestSchema = z.object({
     }
   }),
   dataSensitivity: z.enum(["public", "internal", "sensitive"]),
-  recruitmentRoles: z.string().trim().min(3).max(2000),
+  recruitmentRoles: z.string().trim().min(3, "建议招募岗位至少填写 3 个字符").max(2000),
   weeklyCommitment: z.string().trim().max(500),
 });
+
+export type CreateAiRequestState = {
+  message: string;
+  fieldErrors?: Record<string, string[] | undefined>;
+  values?: Record<string, string>;
+  submissionKey: number;
+};
 
 const reviewSchema = z.object({
   projectLevel: z.coerce.number().int().min(1).max(5),
@@ -110,16 +117,46 @@ function recruitmentContent(request: {
 `;
 }
 
-export async function createAiRequest(formData: FormData) {
-  const data = requestSchema.parse(Object.fromEntries(formData));
+export async function createAiRequest(
+  previousState: CreateAiRequestState,
+  formData: FormData,
+): Promise<CreateAiRequestState> {
+  const values = Object.fromEntries(
+    [...formData.entries()].filter(
+      ([key, value]) => key !== "attachments" && typeof value === "string",
+    ),
+  ) as Record<string, string>;
+  const parsed = requestSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return {
+      message: "部分内容未达到提交要求，请按提示补充后重试。",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+      values,
+      submissionKey: previousState.submissionKey + 1,
+    };
+  }
+
+  const data = parsed.data;
   const { attachments, ...requestData } = data;
-  const request = await prisma.aiDemandRequest.create({
-    data: {
-      ...requestData,
-      attachments: attachments.length ? JSON.stringify(attachments) : "",
-      logs: { create: { action: "需求已提交", actor: requestData.requesterName, detail: `由 ${requestData.requesterDepartment} 提交，等待 AI发展委员会评审` } },
-    },
-  });
+  let request: { id: string };
+  try {
+    request = await prisma.aiDemandRequest.create({
+      data: {
+        ...requestData,
+        attachments: attachments.length ? JSON.stringify(attachments) : "",
+        logs: { create: { action: "需求已提交", actor: requestData.requesterName, detail: `由 ${requestData.requesterDepartment} 提交，等待 AI发展委员会评审` } },
+      },
+      select: { id: true },
+    });
+  } catch (error) {
+    console.error("Failed to create AI demand request", error);
+    return {
+      message: "需求暂时无法保存，请稍后重试；如问题持续，请联系网站维护人员。",
+      values,
+      submissionKey: previousState.submissionKey + 1,
+    };
+  }
+
   refreshWorkflow(request.id);
   redirect(`/ai-requests/${request.id}`);
 }
