@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { committeeAssistants, effectCoefficientValues } from "@/lib/ai-project-workflow";
 import { calculatePointAllocations } from "@/lib/ai-point-allocation";
+import { aiProjectApplicationSchema } from "@/lib/ai-project-application";
 import { attachmentSchema } from "@/lib/validators";
 import { z } from "zod";
 
@@ -55,16 +56,6 @@ const reviewSchema = z.object({
 });
 
 const committeeAssistantSchema = z.enum(committeeAssistants, { message: "请选择AI发展委员会协助人" });
-
-const applicationSchema = z.object({
-  name: z.string().trim().min(1).max(50),
-  department: z.string().trim().min(1).max(80),
-  email: emailSchema,
-  intendedRole: z.string().trim().min(1).max(100),
-  skills: z.string().trim().min(3).max(2000),
-  weeklyAvailability: z.string().trim().min(1).max(200),
-  statement: z.string().trim().max(2000),
-});
 
 function refreshWorkflow(requestId?: string) {
   revalidatePath("/");
@@ -224,7 +215,7 @@ export async function updateCommitteeAssistant(requestId: string, formData: Form
 }
 
 export async function submitApplication(requestId: string, formData: FormData) {
-  const data = applicationSchema.parse(Object.fromEntries(formData));
+  const data = aiProjectApplicationSchema.parse(Object.fromEntries(formData));
   const request = await prisma.aiDemandRequest.findUniqueOrThrow({ where: { id: requestId } });
   if (request.status !== "recruiting") throw new Error("该项目当前不在招募阶段");
 
