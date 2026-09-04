@@ -227,7 +227,6 @@ export async function submitApplication(requestId: string, formData: FormData) {
   const data = applicationSchema.parse(Object.fromEntries(formData));
   const request = await prisma.aiDemandRequest.findUniqueOrThrow({ where: { id: requestId } });
   if (request.status !== "recruiting") throw new Error("该项目当前不在招募阶段");
-  if (request.recruitmentDeadline && request.recruitmentDeadline < new Date()) throw new Error("报名已截止");
 
   await prisma.$transaction(async (tx) => {
     await tx.aiProjectApplication.upsert({

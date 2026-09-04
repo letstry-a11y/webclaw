@@ -25,7 +25,7 @@ function RecruitmentCard({ recruitment, featured = false }: { recruitment: Activ
         <h3 className={`mt-3 font-black leading-tight tracking-[-0.025em] ${featured ? "text-2xl sm:text-4xl" : "text-xl"}`}>{recruitment.title}</h3>
         {featured && <p className="mt-3 line-clamp-2 max-w-3xl text-sm leading-6 text-white/72">{recruitment.recruitmentRoles}</p>}
         <dl className={`mt-5 grid gap-2 text-xs text-white/78 ${featured ? "sm:grid-cols-3" : "grid-cols-2"}`}>
-          <div className="flex items-center gap-1.5"><Clock3 className="h-3.5 w-3.5 text-[#9eb3ff]" /><dt className="sr-only">报名截止</dt><dd>截止 {formatProjectDate(recruitment.recruitmentDeadline)}</dd></div>
+          <div className="flex items-center gap-1.5"><Clock3 className="h-3.5 w-3.5 text-[#9eb3ff]" /><dt className="sr-only">计划报名截止</dt><dd>计划截止 {formatProjectDate(recruitment.recruitmentDeadline)}，逾期仍可报名</dd></div>
           <div className="flex items-center gap-1.5"><CircleDollarSign className="h-3.5 w-3.5 text-[#9eb3ff]" /><dt className="sr-only">基础积分</dt><dd>{recruitment.basePointPool?.toLocaleString("zh-CN") ?? "待定"} 积分</dd></div>
           <div className={`flex items-center gap-1.5 ${featured ? "" : "col-span-2"}`}><Handshake className="h-3.5 w-3.5 text-[#9eb3ff]" /><dt className="sr-only">AI发展委员会协助人</dt><dd>协助人：{recruitment.committeeAssistant || "待指定"}</dd></div>
         </dl>
