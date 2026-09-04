@@ -2,13 +2,14 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
+import { randomUUID } from "@/lib/random-uuid";
 
 const SESSION_KEY = "medbot_visit_session";
 
 function getSessionId() {
   const existing = sessionStorage.getItem(SESSION_KEY);
   if (existing) return existing;
-  const sessionId = crypto.randomUUID();
+  const sessionId = randomUUID();
   sessionStorage.setItem(SESSION_KEY, sessionId);
   return sessionId;
 }
@@ -19,7 +20,7 @@ export default function VisitTracker() {
   useEffect(() => {
     if (!pathname) return;
 
-    const visitId = crypto.randomUUID();
+    const visitId = randomUUID();
     const sessionId = getSessionId();
     const startedAt = Date.now();
     let lastDuration = 0;
