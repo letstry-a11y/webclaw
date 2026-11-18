@@ -17,6 +17,8 @@ import {
   Target, UserCheck, Users,
 } from "lucide-react";
 import PointAllocationForm from "./PointAllocationForm";
+import ProgressForm from "@/components/ai/ProgressForm";
+import ActionForm from "@/components/ai/ActionForm";
 import { attachmentSchema, type Attachment } from "@/lib/validators";
 import { inferRatioTenths } from "@/lib/ai-point-allocation";
 
@@ -63,7 +65,7 @@ function StageAction({ title, description, action, button }: { title: string; de
   return (
     <form action={action} className={`${panelClass} space-y-4`}>
       <div><h3 className="text-lg font-black">{title}</h3><p className="mt-1 text-sm leading-6 text-[#6b7890]">{description}</p></div>
-      <div><label className={labelClass}>操作人</label><input className={fieldClass} name="actor" required maxLength={80} placeholder="项目负责人或需求方姓名" /></div>
+      <div><label className={labelClass} htmlFor="field-actor">操作人</label><input className={fieldClass} id="field-actor" name="actor" required maxLength={80} placeholder="项目负责人或需求方姓名" /></div>
       <button className="inline-flex items-center gap-2 bg-[#4870ff] px-4 py-2.5 text-sm font-black text-white hover:bg-[#5b80ff]" type="submit">{button}<ArrowRight className="h-4 w-4" /></button>
     </form>
   );
@@ -133,23 +135,22 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
             {request.status === "pending_review" && (
               <form action={reviewAndPublish.bind(null, id)} className={`${panelClass} space-y-4`}>
                 <div><p className="font-mono text-[10px] tracking-[0.18em] text-[#032a72]">AI DEVELOPMENT COMMITTEE REVIEW</p><h2 className="mt-2 text-2xl font-black">AI发展委员会评审并发布招募</h2><p className="mt-2 text-sm leading-6 text-[#6b7890]">评审通过后将立即生成一篇社区活动，并开放员工报名。</p></div>
-                <div className="grid gap-3 sm:grid-cols-3"><div><label className={labelClass}>AI 项目等级</label><select className={fieldClass} name="projectLevel" defaultValue="3">{[1,2,3,4,5].map((level) => <option key={level} value={level}>{level} 级项目</option>)}</select></div><div><label className={labelClass}>基础积分总包</label><input className={fieldClass} name="basePointPool" type="number" min="1" required /></div><div><label className={labelClass}>计划团队人数</label><input className={fieldClass} name="plannedTeamSize" type="number" min="1" defaultValue="3" required /></div></div>
-                <div className="grid gap-3 sm:grid-cols-3"><div><label className={labelClass}>报名截止日期</label><input className={fieldClass} name="recruitmentDeadline" type="date" required /></div><div><label className={labelClass}>质保期（月）</label><input className={fieldClass} name="warrantyMonths" type="number" min="1" max="24" defaultValue="3" required /></div><div><label className={labelClass}>评审人</label><input className={fieldClass} name="reviewedBy" required maxLength={80} defaultValue="AI发展委员会" /></div></div>
-                <div><label className={labelClass}>AI发展委员会协助人</label><select className={fieldClass} name="committeeAssistant" required defaultValue=""><option value="" disabled>请选择协助项目协调资源的委员会成员</option>{committeeAssistants.map((member) => <option key={member} value={member}>{member}</option>)}</select></div>
-                <div><label className={labelClass}>评审意见</label><textarea className={fieldClass} name="reviewComment" required rows={3} maxLength={2000} placeholder="请填写评审依据，如：同意发布" /></div>
+                <div className="grid gap-3 sm:grid-cols-3"><div><label className={labelClass} htmlFor="field-projectLevel">AI 项目等级</label><select className={fieldClass} id="field-projectLevel" name="projectLevel" defaultValue="3">{[1,2,3,4,5].map((level) => <option key={level} value={level}>{level} 级项目</option>)}</select></div><div><label className={labelClass} htmlFor="field-basePointPool">基础积分总包</label><input className={fieldClass} id="field-basePointPool" name="basePointPool" type="number" min="1" required /></div><div><label className={labelClass} htmlFor="field-plannedTeamSize">计划团队人数</label><input className={fieldClass} id="field-plannedTeamSize" name="plannedTeamSize" type="number" min="1" defaultValue="3" required /></div></div>
+                <div className="grid gap-3 sm:grid-cols-3"><div><label className={labelClass} htmlFor="field-recruitmentDeadline">报名截止日期</label><input className={fieldClass} id="field-recruitmentDeadline" name="recruitmentDeadline" type="date" required /></div><div><label className={labelClass} htmlFor="field-warrantyMonths">质保期（月）</label><input className={fieldClass} id="field-warrantyMonths" name="warrantyMonths" type="number" min="1" max="24" defaultValue="3" required /></div><div><label className={labelClass} htmlFor="field-reviewedBy">评审人</label><input className={fieldClass} id="field-reviewedBy" name="reviewedBy" required maxLength={80} defaultValue="AI发展委员会" /></div></div>
+                <div><label className={labelClass} htmlFor="field-committeeAssistant">AI发展委员会协助人</label><select className={fieldClass} id="field-committeeAssistant" name="committeeAssistant" required defaultValue=""><option value="" disabled>请选择协助项目协调资源的委员会成员</option>{committeeAssistants.map((member) => <option key={member} value={member}>{member}</option>)}</select></div>
+                <div><label className={labelClass} htmlFor="field-reviewComment">评审意见</label><textarea className={fieldClass} id="field-reviewComment" name="reviewComment" required rows={3} maxLength={2000} placeholder="请填写评审依据，如：同意发布" /></div>
                 <button className="inline-flex items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white hover:bg-[#5b80ff]" type="submit"><Send className="h-4 w-4" />通过评审并发布社区招募</button>
               </form>
             )}
 
             {request.status === "recruiting" && (
               <>
-                <form action={submitApplication.bind(null, id)} className={`${panelClass} space-y-4`}>
+                <ActionForm action={submitApplication.bind(null, id)} button="提交报名" className={`${panelClass} space-y-4`}>
                   <div><p className="font-mono text-[10px] tracking-[0.18em] text-[#032a72]">JOIN THE PROJECT</p><h2 className="mt-2 text-2xl font-black">报名参与项目</h2><p className="mt-2 text-sm text-[#6b7890]">计划报名截止：{formatProjectDate(request.recruitmentDeadline)} · 截止日期后仍可继续报名</p></div>
-                  <div className="grid gap-3 sm:grid-cols-3"><div><label className={labelClass}>姓名</label><input className={fieldClass} name="name" required maxLength={50} /></div><div><label className={labelClass}>部门</label><input className={fieldClass} name="department" required maxLength={80} /></div><div><label className={labelClass}>企业邮箱</label><input className={fieldClass} name="email" type="email" required maxLength={120} /></div></div>
-                  <div className="grid gap-3 sm:grid-cols-2"><div><label className={labelClass}>意向岗位</label><input className={fieldClass} name="intendedRole" required maxLength={100} /></div><div><label className={labelClass}>每周可投入时间</label><input className={fieldClass} name="weeklyAvailability" required maxLength={200} /></div></div>
-                  <div><label className={labelClass}>相关技能与项目经验</label><textarea className={fieldClass} name="skills" required rows={3} maxLength={2000} placeholder="请简要填写；暂无相关经验可填写“暂无”" /></div><div><label className={labelClass}>报名说明</label><textarea className={fieldClass} name="statement" rows={2} maxLength={2000} /></div>
-                  <button className="inline-flex items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white hover:bg-[#5b80ff]" type="submit"><UserCheck className="h-4 w-4" />提交报名</button>
-                </form>
+                  <div className="grid gap-3 sm:grid-cols-3"><div><label className={labelClass} htmlFor="field-name">姓名</label><input className={fieldClass} id="field-name" name="name" required maxLength={50} /></div><div><label className={labelClass} htmlFor="field-department">部门</label><input className={fieldClass} id="field-department" name="department" required maxLength={80} /></div><div><label className={labelClass} htmlFor="field-email">企业邮箱</label><input className={fieldClass} id="field-email" name="email" type="email" required maxLength={120} /></div></div>
+                  <div className="grid gap-3 sm:grid-cols-2"><div><label className={labelClass} htmlFor="field-intendedRole">意向岗位</label><input className={fieldClass} id="field-intendedRole" name="intendedRole" required maxLength={100} /></div><div><label className={labelClass} htmlFor="field-weeklyAvailability">每周可投入时间</label><input className={fieldClass} id="field-weeklyAvailability" name="weeklyAvailability" required maxLength={200} /></div></div>
+                  <div><label className={labelClass} htmlFor="field-skills">相关技能与项目经验</label><textarea className={fieldClass} id="field-skills" name="skills" required rows={3} maxLength={2000} placeholder="请简要填写；暂无相关经验可填写“暂无”" /></div><div><label className={labelClass} htmlFor="field-statement">报名说明</label><textarea className={fieldClass} id="field-statement" name="statement" rows={2} maxLength={2000} /></div>
+                </ActionForm>
 
                 <section className={panelClass}>
                   <div className="flex items-end justify-between"><div><h2 className="text-2xl font-black">报名筛选</h2><p className="mt-1 text-sm text-[#6b7890]">共 {request.applications.length} 人报名，已入选 {selectedApplications.length} 人。</p></div><Users className="h-6 w-6 text-[#4870ff]" /></div>
@@ -160,7 +161,7 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
                 </section>
 
                 {selectedApplications.length > 0 && (
-                  <form action={confirmTeam.bind(null, id)} className={`${panelClass} space-y-4`}><div><h2 className="text-2xl font-black">确认项目团队</h2><p className="mt-1 text-sm leading-6 text-[#6b7890]">确认后将自动创建 AI 看板项目，并关闭本轮招募。</p></div><div><label className={labelClass}>指定项目负责人</label><select className={fieldClass} name="leadApplicationId" required defaultValue=""><option value="" disabled>请选择已入选成员</option>{selectedApplications.map((application) => <option key={application.id} value={application.id}>{application.name} · {application.department} · {application.intendedRole}</option>)}</select></div><button className="inline-flex items-center gap-2 bg-[#032a72] px-5 py-3 text-sm font-black text-white hover:bg-[#0d3d88]" type="submit"><Users className="h-4 w-4" />确认团队并进入 AI 看板</button></form>
+                  <form action={confirmTeam.bind(null, id)} className={`${panelClass} space-y-4`}><div><h2 className="text-2xl font-black">确认项目团队</h2><p className="mt-1 text-sm leading-6 text-[#6b7890]">确认后将自动创建 AI 看板项目，并关闭本轮招募。</p></div><div><label className={labelClass} htmlFor="field-leadApplicationId">指定项目负责人</label><select className={fieldClass} id="field-leadApplicationId" name="leadApplicationId" required defaultValue=""><option value="" disabled>请选择已入选成员</option>{selectedApplications.map((application) => <option key={application.id} value={application.id}>{application.name} · {application.department} · {application.intendedRole}</option>)}</select></div><button className="inline-flex items-center gap-2 bg-[#032a72] px-5 py-3 text-sm font-black text-white hover:bg-[#0d3d88]" type="submit"><Users className="h-4 w-4" />确认团队并进入 AI 看板</button></form>
                 )}
               </>
             )}
@@ -172,20 +173,21 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
             {request.status === "delivered_pending_review" && (
               <form action={scoreProject.bind(null, id)} className={`${panelClass} space-y-5`}>
                 <div><p className="font-mono text-[10px] tracking-[0.18em] text-[#032a72]">FINAL REVIEW</p><h2 className="mt-2 text-2xl font-black">AI发展委员会结题评审</h2><p className="mt-2 text-sm leading-6 text-[#6b7890]">AI发展委员会按激励政策直接确定成效系数；系统据此计算最终积分总包。</p></div>
-                <fieldset className="border border-[#d8e0ee] bg-[#fafbfd] p-4"><legend className="px-2 text-sm font-black">主要负责人信息</legend><div className="grid gap-3 sm:grid-cols-2"><div><label className={labelClass}>姓名</label><input className={fieldClass} name="leadName" required maxLength={50} defaultValue={projectLead?.name ?? request.project?.owner ?? ""} /></div><div><label className={labelClass}>部门</label><input className={fieldClass} name="leadDepartment" required maxLength={80} defaultValue={projectLead?.department ?? ""} /></div><div><label className={labelClass}>企业邮箱</label><input className={fieldClass} name="leadEmail" type="email" required maxLength={120} defaultValue={projectLead?.email ?? ""} /></div><div><label className={labelClass}>项目角色</label><input className={fieldClass} name="leadRole" required maxLength={100} defaultValue={projectLead?.role ?? "项目负责人"} /></div></div></fieldset>
-                <div className="grid gap-3 sm:grid-cols-2"><div><label className={labelClass}>成效系数</label><select className={fieldClass} name="effectCoefficient" required defaultValue=""><option value="" disabled>请选择激励政策分档</option>{effectCoefficientOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></div><div><label className={labelClass}>评审人</label><input className={fieldClass} name="reviewedBy" required maxLength={80} defaultValue="AI发展委员会" /></div></div>
-                <div><label className={labelClass}>结题评语</label><textarea className={fieldClass} name="comment" required rows={3} maxLength={2000} /></div><button className="inline-flex items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white"><ClipboardCheck className="h-4 w-4" />确认成效系数并计算最终积分</button>
+                <fieldset className="border border-[#d8e0ee] bg-[#fafbfd] p-4"><legend className="px-2 text-sm font-black">主要负责人信息</legend><div className="grid gap-3 sm:grid-cols-2"><div><label className={labelClass} htmlFor="field-leadName">姓名</label><input className={fieldClass} id="field-leadName" name="leadName" required maxLength={50} defaultValue={projectLead?.name ?? request.project?.owner ?? ""} /></div><div><label className={labelClass} htmlFor="field-leadDepartment">部门</label><input className={fieldClass} id="field-leadDepartment" name="leadDepartment" required maxLength={80} defaultValue={projectLead?.department ?? ""} /></div><div><label className={labelClass} htmlFor="field-leadEmail">企业邮箱</label><input className={fieldClass} id="field-leadEmail" name="leadEmail" type="email" required maxLength={120} defaultValue={projectLead?.email ?? ""} /></div><div><label className={labelClass} htmlFor="field-leadRole">项目角色</label><input className={fieldClass} id="field-leadRole" name="leadRole" required maxLength={100} defaultValue={projectLead?.role ?? "项目负责人"} /></div></div></fieldset>
+                <div className="grid gap-3 sm:grid-cols-2"><div><label className={labelClass} htmlFor="field-effectCoefficient">成效系数</label><select className={fieldClass} id="field-effectCoefficient" name="effectCoefficient" required defaultValue=""><option value="" disabled>请选择激励政策分档</option>{effectCoefficientOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></div><div><label className={labelClass} htmlFor="field-reviewedBy-2">评审人</label><input className={fieldClass} id="field-reviewedBy-2" name="reviewedBy" required maxLength={80} defaultValue="AI发展委员会" /></div></div>
+                <div><label className={labelClass} htmlFor="field-comment">结题评语</label><textarea className={fieldClass} id="field-comment" name="comment" required rows={3} maxLength={2000} /></div><button className="inline-flex items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white"><ClipboardCheck className="h-4 w-4" />确认成效系数并计算最终积分</button>
               </form>
             )}
 
             {request.status === "scored_pending_allocation" && (
-              <PointAllocationForm action={proposePointAllocation.bind(null, id)} members={request.teamMembers.map(({ id: memberId, name, department, email, role, isLead }) => ({ id: memberId, name, department, email, role, isLead }))} finalPointPool={request.finalPointPool!} defaultProposer={projectLead?.name ?? request.project?.owner ?? ""} />
+              <PointAllocationForm version={request.updatedAt.toISOString()} action={proposePointAllocation.bind(null, id)} members={request.teamMembers.map(({ id: memberId, name, department, email, role, isLead }) => ({ id: memberId, name, department, email, role, isLead }))} finalPointPool={request.finalPointPool!} defaultProposer={projectLead?.name ?? request.project?.owner ?? ""} />
             )}
 
             {request.status === "warranty" && (
               <>
                 <PointAllocationForm
                   key={request.teamMembers.map((member) => member.id).join("|")}
+                  version={request.updatedAt.toISOString()}
                   action={proposePointAllocation.bind(null, id)}
                   members={request.teamMembers.map(({ id: memberId, name, department, email, role, isLead }) => ({ id: memberId, name, department, email, role, isLead }))}
                   finalPointPool={request.finalPointPool!}
@@ -194,7 +196,7 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
                   defaultAllocationNote={request.allocationNote}
                   isRevision
                 />
-                <form action={completeWarranty.bind(null, id)} className={`${panelClass} space-y-4`}><div><h2 className="text-2xl font-black">完成质保并发放剩余积分</h2><p className="mt-2 text-sm text-[#6b7890]">首期积分已进入榜单。质保期为 {request.warrantyMonths} 个月；如需调整个人比例，请先在上方保存修改。确认质保结束后发放剩余积分，项目结题后分配将不能再修改。</p></div><div><label className={labelClass}>AI发展委员会确认人</label><input className={fieldClass} name="actor" required maxLength={80} /></div><button className="inline-flex items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white"><Award className="h-4 w-4" />完成质保并正式结题</button></form>
+                <form action={completeWarranty.bind(null, id)} className={`${panelClass} space-y-4`}><div><h2 className="text-2xl font-black">完成质保并发放剩余积分</h2><p className="mt-2 text-sm text-[#6b7890]">首期积分已进入榜单。质保期为 {request.warrantyMonths} 个月；如需调整个人比例，请先在上方保存修改。确认质保结束后发放剩余积分，项目结题后分配将不能再修改。</p></div><div><label className={labelClass} htmlFor="field-actor-2">AI发展委员会确认人</label><input className={fieldClass} id="field-actor-2" name="actor" required maxLength={80} /></div><button className="inline-flex items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white"><Award className="h-4 w-4" />完成质保并正式结题</button></form>
               </>
             )}
 
@@ -202,6 +204,12 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
           </div>
 
           <aside className="space-y-6">
+            <section className={panelClass}><h2 className="text-lg font-black">项目跟进</h2>
+              <div className="mt-3 flex flex-wrap gap-4 text-sm font-bold text-[#194c94]"><Link href="/ai-projects">项目总览</Link>
+                {request.project && <Link href={"/ai-projects/products/" + request.project.id}>产品资料</Link>}
+                <Link href={"/ai-projects/weekly#row-request:" + id}>管理周报</Link></div>
+              <ProgressForm type="request" id={id}/>
+            </section>
             <section className={panelClass}><h2 className="text-lg font-black">需求方信息</h2><dl className="mt-4 space-y-3 text-sm"><div className="flex items-center gap-2"><Building2 className="h-4 w-4 text-[#4870ff]" /><span>{request.requesterDepartment}</span></div><div className="flex items-center gap-2"><UserCheck className="h-4 w-4 text-[#4870ff]" /><span>{request.requesterName}</span></div><div className="flex items-center gap-2"><Mail className="h-4 w-4 text-[#4870ff]" /><a href={`mailto:${request.requesterEmail}`} className="break-all text-[#032a72] hover:underline">{request.requesterEmail}</a></div><div className="flex items-center gap-2"><Target className="h-4 w-4 text-[#4870ff]" /><span>期望完成：{formatProjectDate(request.targetDate)}</span></div></dl></section>
 
             <section className={panelClass}>

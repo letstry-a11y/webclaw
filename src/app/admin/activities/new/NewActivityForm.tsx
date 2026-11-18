@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import TiptapEditor from "@/components/editor/TiptapEditor";
 import { Send } from "lucide-react";
@@ -34,16 +34,6 @@ export default function NewActivityForm({
   const [tags, setTags] = useState<string[]>(["活动"]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (initial) {
-      setTitle(initial.title || "");
-      setContent(initial.content || "");
-      setEventLocation(initial.eventLocation || "");
-      setEventLink(initial.eventLink || "");
-      setEventDate(initial.eventDate || "");
-    }
-  }, [initial]);
 
   const addTag = () => {
     const tag = tagInput.trim();

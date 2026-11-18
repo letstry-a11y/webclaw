@@ -12,6 +12,7 @@ services:
       DATABASE_URL: "file:/app/data/dev.db"
       ADMIN_PASSWORD: "${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}"
       JWT_SECRET: "${JWT_SECRET:?JWT_SECRET must be set (use a long random string)}"
+      MANAGEMENT_REPORT_TOKEN: "${MANAGEMENT_REPORT_TOKEN:-}"
       SEED_ON_STARTUP: "${SEED_ON_STARTUP:-false}"
       TZ: "Asia/Shanghai"
     volumes:

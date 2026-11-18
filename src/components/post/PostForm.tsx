@@ -147,8 +147,8 @@ export default function PostForm({ mode, initial }: Props) {
   };
 
   return (
-    <div className="min-h-screen">
-      <div className="sticky top-0 z-20 bg-bg/80 backdrop-blur-md border-b border-border-light">
+    <div className="editing-surface min-h-screen bg-white text-[#17283f]">
+      <div className="sticky top-[68px] z-20 bg-white/95 backdrop-blur-md border-b border-border-light">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
           <Link
             href={isEdit && initial?.slug ? `/posts/${initial.slug}` : "/"}
@@ -196,6 +196,7 @@ export default function PostForm({ mode, initial }: Props) {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         <input
           type="text"
+          aria-label="文章标题"
           placeholder="标题"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -232,22 +233,23 @@ export default function PostForm({ mode, initial }: Props) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1.5">昵称</label>
+              <label htmlFor="post-author" className="block text-sm font-medium text-text-secondary mb-1.5">昵称</label>
               <input
                 type="text"
+                id="post-author"
                 placeholder="匿名用户"
                 value={authorName}
                 onChange={(e) => setAuthorName(e.target.value)}
                 maxLength={50}
-                className="w-full px-3 py-2 text-sm bg-bg border border-transparent rounded-lg focus:outline-none focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1.5">分类</label>
-              <select
+              <label htmlFor="post-category" className="block text-sm font-medium text-text-secondary mb-1.5">分类</label>
+              <select id="post-category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-bg border border-transparent rounded-lg focus:outline-none focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
               >
                 {DEFAULT_CATEGORIES.map((cat) => (
                   <option key={cat.slug} value={cat.slug}>
@@ -270,7 +272,7 @@ export default function PostForm({ mode, initial }: Props) {
                     className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-tag-bg text-tag-text rounded-full"
                   >
                     {tag}
-                    <button onClick={() => removeTag(tag)} className="hover:text-accent">
+                    <button aria-label={`删除标签 ${tag}`} onClick={() => removeTag(tag)} className="hover:text-accent">
                       <X className="w-3 h-3" />
                     </button>
                   </span>
@@ -280,6 +282,7 @@ export default function PostForm({ mode, initial }: Props) {
             <div className="flex gap-2">
               <input
                 type="text"
+                aria-label="标签"
                 placeholder="输入标签后按回车"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
@@ -290,7 +293,7 @@ export default function PostForm({ mode, initial }: Props) {
                   }
                 }}
                 disabled={tags.length >= 5}
-                className="flex-1 px-3 py-2 text-sm bg-bg border border-transparent rounded-lg focus:outline-none focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50 transition-colors"
+                className="flex-1 px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50 transition-colors"
               />
               <button
                 type="button"

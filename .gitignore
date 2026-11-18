@@ -60,3 +60,10 @@ next-env.d.ts
 # local SQLite database
 *.db
 *.db-journal
+*.db-wal
+*.db-shm
+
+# Internal source documents supplied beside the application
+/*.docx
+/*.xlsx
+/*.pptx

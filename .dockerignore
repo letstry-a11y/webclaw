@@ -12,6 +12,12 @@ npm-debug.log*
 !.env.example
 *.db
 *.db-journal
+*.db-wal
+*.db-shm
+*.docx
+*.xlsx
+*.pptx
+访问记录
 public/uploads
 .DS_Store
 coverage

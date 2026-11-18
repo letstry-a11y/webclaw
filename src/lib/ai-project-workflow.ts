@@ -49,5 +49,5 @@ export const effectCoefficientValues = effectCoefficientOptions.map((option) => 
 
 export function formatProjectDate(value: Date | null | undefined) {
   if (!value) return "待确认";
-  return new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).format(value);
+  return new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(value);
 }

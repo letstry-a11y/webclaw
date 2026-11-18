@@ -4,12 +4,21 @@ import { createPostSchema } from "@/lib/validators";
 import { slugify, generateExcerpt } from "@/lib/utils";
 import { getFingerprint } from "@/lib/fingerprint";
 
+function publicPost<T extends { authorFingerprint: string }>({ authorFingerprint, ...post }: T) {
+  void authorFingerprint;
+  return post;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const category = searchParams.get("category") || "";
   const type = searchParams.get("type") || "blog";
-  const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-  const limit = Math.min(50, parseInt(searchParams.get("limit") || "12"));
+  const positiveInt = (value: string | null, fallback: number, max: number) => {
+    const n = Number(value);
+    return Number.isSafeInteger(n) && n > 0 ? Math.min(n, max) : fallback;
+  };
+  const page = positiveInt(searchParams.get("page"), 1, 1_000_000);
+  const limit = positiveInt(searchParams.get("limit"), 12, 50);
 
   const where = {
     isPublished: true,
@@ -28,7 +37,7 @@ export async function GET(request: NextRequest) {
     prisma.post.count({ where }),
   ]);
 
-  return NextResponse.json({ posts, total, page, totalPages: Math.ceil(total / limit) });
+  return NextResponse.json({ posts: posts.map(publicPost), total, page, totalPages: Math.ceil(total / limit) });
 }
 
 export async function POST(request: Request) {
@@ -63,7 +72,7 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json(post, { status: 201 });
+    return NextResponse.json(publicPost(post), { status: 201 });
   } catch (error) {
     console.error("POST /api/posts error:", error);
     if (error instanceof Error && error.name === "ZodError") {

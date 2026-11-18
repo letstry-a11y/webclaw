@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import AiRequestForm from "./AiRequestForm";
 import { formatProjectDate, requestStatusMeta, type AiRequestStatus } from "@/lib/ai-project-workflow";
 import { ArrowRight, Building2, CalendarClock, CheckCircle2, CircleDollarSign, ClipboardCheck, ClipboardList, Handshake, Plus, ShieldCheck, Sparkles, UserCheck, Users } from "lucide-react";
 
@@ -26,6 +25,7 @@ export default async function AiRequestsPage() {
     orderBy: { updatedAt: "desc" },
     include: {
       teamMembers: { where: { isLead: true }, take: 1, select: { name: true } },
+      project: { select: { owner: true } },
     },
   });
 
@@ -42,10 +42,8 @@ export default async function AiRequestsPage() {
               <h1 className="text-4xl font-black tracking-[-0.04em] sm:text-6xl">AI 项目需求与招募</h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-white/70 sm:text-base">需求从这里开始，经 AI发展委员会评审后进入社区招募；团队确认后自动进入看板，AI发展委员会确定成效系数后由项目负责人完成积分分配。</p>
             </div>
-            <details className="group relative">
-              <summary className="flex cursor-pointer list-none items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white hover:bg-[#5b80ff]"><Plus className="h-4 w-4" /> 提交 AI 应用需求</summary>
-              <AiRequestForm />
-            </details>
+            <div className="flex flex-wrap gap-3"><Link href="/ai-projects" className="border border-white/50 px-5 py-3 text-sm font-bold">项目总览</Link>
+              <Link href="/ai-requests/new" className="flex items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white"><Plus className="h-4 w-4"/>提交 AI 应用需求</Link></div>
           </div>
         </div>
       </header>
@@ -78,7 +76,7 @@ export default async function AiRequestsPage() {
                     <div className="grid gap-px bg-[#d8e0ee] md:grid-cols-2">
                       {groupedRequests.map((request, index) => {
                         const status = requestStatusMeta[request.status as AiRequestStatus] ?? requestStatusMeta.pending_review;
-                        const lead = request.teamMembers[0]?.name ?? "待确认";
+                        const lead = request.teamMembers[0]?.name || request.project?.owner || "待确认";
                         const fillsLastRow = groupedRequests.length % 2 === 1 && index === groupedRequests.length - 1;
                         return (
                           <Link key={request.id} href={`/ai-requests/${request.id}`} className={`group bg-white p-5 hover:bg-[#f8faff] sm:p-6 ${fillsLastRow ? "md:col-span-2" : ""}`}>

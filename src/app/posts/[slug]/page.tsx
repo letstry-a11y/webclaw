@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 import { Eye, Calendar, Tag, User, Paperclip, Download, FileText, Pencil } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import LikeButton from "@/components/shared/LikeButton";
 import CommentSection from "@/components/comment/CommentSection";
 import ViewCounter from "@/components/shared/ViewCounter";
@@ -133,7 +134,7 @@ export default async function PostPage({ params }: Props) {
         {/* Cover Image */}
         {post.coverImage && (
           <div className="mb-8 rounded-xl overflow-hidden">
-            <img src={post.coverImage} alt={post.title} className="w-full" />
+            <Image src={post.coverImage} alt={post.title} width={1600} height={900} unoptimized loading="eager" className="h-auto w-full" />
           </div>
         )}
 

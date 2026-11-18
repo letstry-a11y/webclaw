@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Post } from "@prisma/client";
 import { ArrowRight, Bot, Cpu, Sparkles, Trophy } from "lucide-react";
 
@@ -20,7 +21,7 @@ function categoryLabel(category: string) {
 
 function Visual({ post, variant }: { post: Post; variant: number }) {
   if (post.coverImage) {
-    return <img src={post.coverImage} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]" />;
+    return <Image fill unoptimized src={post.coverImage} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]" />;
   }
 
   return (

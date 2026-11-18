@@ -30,6 +30,18 @@ test("rejects ratios that do not total 100 percent", () => {
   );
 });
 
+test("a positive base award rounded to zero at settlement can finish the workflow", () => {
+  const [award] = calculatePointAllocations(0, [{ key:"lead", ratioTenths:1000 }]);
+  assert.deepEqual([award.proposedPoints,award.issuedPoints,award.warrantyPoints],[0,0,0]);
+});
+
+test("rounds the initial release without exceeding any participant's award", () => {
+  const shares = Array.from({ length: 10 }, (_, index) => ({ key: String(index), ratioTenths: 100 }));
+  const allocations = calculatePointAllocations(10, shares);
+  assert.equal(allocations.reduce((sum, item) => sum + item.issuedPoints, 0), 7);
+  assert.ok(allocations.every((item) => item.warrantyPoints >= 0 && item.issuedPoints <= item.proposedPoints));
+});
+
 test("uses stored ratios when available", () => {
   assert.deepEqual(inferRatioTenths(1000, [
     { key: "a", proposedPoints: 333, ratioTenths: 333 },
