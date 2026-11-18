@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, CircleDollarSign, Clock3, Handshake, Users } from "lucide-react";
 import { formatProjectDate } from "@/lib/ai-project-workflow";
 import type { ActiveRecruitment } from "@/lib/ai-recruitment";
@@ -11,7 +12,7 @@ function RecruitmentCard({ recruitment, featured = false }: { recruitment: Activ
       className={`group relative flex overflow-hidden bg-[#032a72] text-white ${featured ? "min-h-[360px]" : "min-h-[210px]"}`}
     >
       {coverImage ? (
-        <img src={coverImage} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+        <Image fill unoptimized src={coverImage} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
       ) : (
         <div className="absolute inset-0 opacity-70 [background-image:linear-gradient(rgba(72,112,255,0.22)_1px,transparent_1px),linear-gradient(90deg,rgba(72,112,255,0.22)_1px,transparent_1px)] [background-size:38px_38px]" />
       )}
@@ -54,12 +55,14 @@ export default function RecruitmentSpotlight({ recruitments, compact = false }: 
             <h2 className="mt-2 text-3xl font-black tracking-[-0.035em] text-[#111827] sm:text-4xl">AI 项目正在招募</h2>
             <p className="mt-2 text-sm text-[#52627d]">按基础积分从高到低展示，加入真实业务项目并协作交付成果。</p>
           </div>
-          <Link href="/ai-requests" className="inline-flex items-center gap-1 text-sm font-black text-[#032a72]">查看全部项目 <ArrowRight className="h-4 w-4 text-[#4870ff]" /></Link>
+          <Link href={compact ? "/ai-projects?phase=recruiting" : "/activities"} className="inline-flex items-center gap-1 text-sm font-black text-[#032a72]">{compact ? "招募项目清单" : "查看全部招募"} <ArrowRight className="h-4 w-4 text-[#4870ff]" /></Link>
         </div>
         <div className={sortedRecruitments.length === 1 ? "grid" : "grid gap-3 lg:grid-cols-[1.65fr_0.85fr]"}>
           <RecruitmentCard recruitment={sortedRecruitments[0]} featured />
           {sortedRecruitments.length > 1 && <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">{sortedRecruitments.slice(1, 3).map((recruitment) => <RecruitmentCard key={recruitment.id} recruitment={recruitment} />)}</div>}
         </div>
+        {sortedRecruitments.length > 3 && <ul className="mt-3 divide-y divide-slate-200 border border-slate-200 bg-white">{sortedRecruitments.slice(3).map((r) =>
+          <li key={r.id}><Link href={"/ai-requests/" + r.id} className="flex items-center justify-between gap-3 p-4 font-bold text-[#153e77]">{r.title}<span className="shrink-0 text-sm">{r.basePointPool?.toLocaleString("zh-CN") ?? "待定"} 分 →</span></Link></li>)}</ul>}
       </div>
     </section>
   );

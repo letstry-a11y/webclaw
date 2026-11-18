@@ -53,6 +53,12 @@ body::before {
 }
 
 /* Tiptap editor styles */
+.editing-surface .text-text-primary { color: #17283f; }
+.editing-surface .text-text-secondary { color: #41556d; }
+.editing-surface .text-text-tertiary { color: #566a81; }
+.editing-surface :is(.border-border, .border-border-light) { border-color: #c6d4e5; }
+.editing-surface .hover\:bg-bg:hover, .editing-surface .hover\:bg-bg\/50:hover { background-color: #edf3fb; }
+.editing-surface .bg-bg\/30 { background-color: #f5f8fc; }
 .tiptap-wrapper {
   min-height: calc(100vh - 260px);
   max-height: calc(100vh - 160px);

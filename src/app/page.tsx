@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { ArrowRight, CalendarDays, Medal, PenSquare, Sparkles } from "lucide-react";
 import type { Post } from "@prisma/client";
@@ -25,7 +26,7 @@ function postCategory(post: HomePost) {
 
 function TechVisual({ post, compact = false }: { post: HomePost; compact?: boolean }) {
   if (post.coverImage) {
-    return <img src={post.coverImage} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />;
+    return <Image fill unoptimized src={post.coverImage} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />;
   }
   return (
     <div className="absolute inset-0 overflow-hidden bg-[#032a72]" aria-hidden="true">
@@ -110,7 +111,7 @@ function SectionHeader({ title, href, linkText }: { title: string; href: string;
 }
 
 export default async function HomePage() {
-  const [policyPost, recentStories, latestPosts, activities, topPointMembers, activeRecruitments] = await Promise.all([
+  const [policyPost, recentStories, latestPosts, otherActivities, topPointMembers, activeRecruitments] = await Promise.all([
     prisma.post.findUnique({ where: { slug: "ai-application-project-incentive-policy", isPublished: true } }),
     prisma.post.findMany({
       where: { isPublished: true, type: "blog", category: "success-stories" },
@@ -121,7 +122,7 @@ export default async function HomePage() {
       orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }], take: 6,
     }),
     prisma.post.findMany({
-      where: { isPublished: true, type: "activity" },
+      where: { isPublished: true, type: "activity", aiRecruitment: { is: null } },
       orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }], take: 8,
     }),
     prisma.aiPointMember.findMany({
@@ -132,8 +133,6 @@ export default async function HomePage() {
     getActiveRecruitments(3),
   ]);
 
-  const activeRecruitmentPostIds = new Set(activeRecruitments.map((request) => request.activityPostId).filter(Boolean));
-  const otherActivities = activities.filter((post) => !activeRecruitmentPostIds.has(post.id));
   const primaryPosts = latestPosts;
   const storyGridClass = recentStories.length === 1
     ? "grid gap-6"
@@ -152,13 +151,9 @@ export default async function HomePage() {
       )}
       <RecruitmentSpotlight recruitments={activeRecruitments} />
 
-      <nav className="border-b border-[#032a72] bg-[#032a72]" aria-label="内容分类">
+      <nav className="border-b border-[#d4deeb] bg-[#f5f8fd] text-[#153e77]" aria-label="项目快捷入口">
         <div className="mx-auto flex max-w-7xl items-center gap-7 overflow-x-auto px-4 sm:px-6">
-          <Link href="/" className="shrink-0 border-b-[3px] border-[#4870ff] py-4 text-sm font-black text-white">首页</Link>
-          <Link href="/ai-projects" className="shrink-0 py-4 text-sm font-bold text-white/80 hover:text-white">AI 看板</Link>
-          <Link href="/ai" className="shrink-0 py-4 text-sm font-bold text-white/80 hover:text-white">AI</Link>
-          <Link href="/robots" className="shrink-0 py-4 text-sm font-bold text-white/80 hover:text-white">机器人</Link>
-          <Link href="/success-stories" className="shrink-0 py-4 text-sm font-bold text-white/80 hover:text-white">成果案例</Link>
+          {[["项目总览","/ai-projects"],["需求与招募","/ai-requests"],["个人积分榜","/ai-points"],["管理周报","/ai-projects/weekly"]].map(([label,href]) => <Link key={href} href={href} className="shrink-0 py-4 text-sm font-bold hover:underline">{label}</Link>)}
         </div>
       </nav>
 

@@ -23,7 +23,9 @@ export default function AdminLoginPage() {
       });
 
       if (res.ok) {
-        router.push("/admin");
+        const query = new URLSearchParams(window.location.search);
+        const week = query.get("week") ?? "";
+        router.replace(query.get("next") === "weekly" ? "/ai-projects/weekly" + (/^\d{4}-\d{2}-\d{2}$/.test(week) ? "?week=" + week : "") : "/admin");
       } else {
         setError("密码错误");
       }
@@ -35,27 +37,29 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center">
+    <div className="min-h-[65vh] flex items-center justify-center bg-[#f5f7fb] p-4 text-[#17283f]">
       <div className="w-full max-w-sm">
         <div className="bg-white rounded-2xl p-8 border border-border shadow-sm">
           <div className="text-center mb-6">
             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
               <Lock className="w-6 h-6 text-primary" />
             </div>
-            <h1 className="text-xl font-bold text-text-primary">管理员登录</h1>
-            <p className="text-sm text-text-secondary mt-1">请输入管理密码</p>
+            <h1 className="text-xl font-bold text-[#153e77]">管理员登录</h1>
+            <p className="text-sm text-slate-600 mt-1">请输入管理密码</p>
           </div>
 
           <form onSubmit={handleSubmit}>
             <input
               type="password"
+              aria-label="管理密码"
+              autoComplete="current-password"
               placeholder="管理密码"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 text-sm bg-bg border border-border rounded-lg focus:outline-none focus:border-primary mb-4"
+              className="w-full px-4 py-3 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-primary mb-4"
             />
             {error && (
-              <div className="text-sm text-accent mb-4">{error}</div>
+              <div role="alert" className="text-sm text-red-800 mb-4">{error}</div>
             )}
             <button
               type="submit"

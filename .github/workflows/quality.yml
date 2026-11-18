@@ -32,7 +32,9 @@ jobs:
       - name: Prepare Prisma
         run: |
           npx prisma generate
-          npx prisma db push
+          touch prisma/ci.db
+          npx prisma migrate deploy
+          npx prisma migrate diff --from-url "file:$PWD/prisma/ci.db" --to-schema-datamodel prisma/schema.prisma --exit-code
 
       - name: Lint
         run: npm run lint
@@ -42,6 +44,11 @@ jobs:
 
       - name: Validate Prisma schema
         run: npx prisma validate
+
+      - name: Test projects, weekly reporting and visit statistics
+        run: |
+          npm run test:projects
+          npm run test:analytics
 
       - name: Production build
         run: npm run build

@@ -23,6 +23,7 @@ export default function PointAllocationForm({
   action,
   members,
   finalPointPool,
+  version,
   defaultProposer,
   initialRatios = {},
   defaultAllocationNote = "",
@@ -31,6 +32,7 @@ export default function PointAllocationForm({
   action: (state: PointAllocationActionState, formData: FormData) => Promise<PointAllocationActionState>;
   members: ExistingMember[];
   finalPointPool: number;
+  version: string;
   defaultProposer: string;
   initialRatios?: Record<string, number>;
   defaultAllocationNote?: string;
@@ -85,7 +87,8 @@ export default function PointAllocationForm({
   }
 
   return (
-    <form action={formAction} className={`${panelClass} space-y-5`}>
+    <form action={formAction} onReset={(event) => event.preventDefault()} className={`${panelClass} space-y-5`}>
+      <input type="hidden" name="version" value={version}/>
       <div>
         <h2 className="text-2xl font-black">{isRevision ? "修改个人积分分配" : "项目负责人确认积分分配"}</h2>
         <p className="mt-2 text-sm leading-6 text-[#6b7890]">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Eye, MessageCircle, Heart, Pin, Star } from "lucide-react";
 import { formatDate, formatCount } from "@/lib/utils";
 import type { PostWithCounts } from "@/types";
@@ -16,8 +17,8 @@ export default function PostCard({ post }: PostCardProps) {
       <Link href={post.type === "activity" ? `/activities/${post.slug}` : `/posts/${post.slug}`}>
         {/* Cover Image */}
         {post.coverImage && (
-          <div className="aspect-video overflow-hidden bg-bg">
-            <img
+          <div className="relative aspect-video overflow-hidden bg-bg">
+            <Image fill unoptimized
               src={post.coverImage}
               alt={post.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

@@ -10,7 +10,7 @@ export type CalculatedAllocation = AllocationRatio & {
 };
 
 export function calculatePointAllocations(finalPointPool: number, allocations: AllocationRatio[]): CalculatedAllocation[] {
-  if (!Number.isInteger(finalPointPool) || finalPointPool <= 0) throw new Error("项目最终积分必须为正整数");
+  if (!Number.isInteger(finalPointPool) || finalPointPool < 0) throw new Error("项目最终积分必须为非负整数");
   if (allocations.length === 0) throw new Error("请至少添加一名积分分配人员");
   if (allocations.some((allocation) => !Number.isInteger(allocation.ratioTenths) || allocation.ratioTenths <= 0)) {
     throw new Error("积分分配比例必须为正数，且最多保留一位小数");
@@ -33,7 +33,11 @@ export function calculatePointAllocations(finalPointPool: number, allocations: A
 
   const targetInitial = Math.round(finalPointPool * 0.7);
   const issuedPoints = calculated.map((allocation) => Math.floor(allocation.proposedPoints * 7 / 10));
-  issuedPoints[issuedPoints.length - 1] += targetInitial - issuedPoints.reduce((sum, points) => sum + points, 0);
+  const residual = targetInitial - issuedPoints.reduce((sum, points) => sum + points, 0);
+  const fractions = calculated.map(({ proposedPoints }, index) => ({ index, remainder: (proposedPoints * 7) % 10 }));
+  for (const { index } of fractions.sort((a, b) => b.remainder - a.remainder).slice(0, residual)) {
+    issuedPoints[index] += 1;
+  }
 
   return calculated.map((allocation, index) => ({
     key: allocation.key,

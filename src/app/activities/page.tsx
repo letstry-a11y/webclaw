@@ -20,25 +20,23 @@ export default async function ActivitiesPage() {
       orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
       include: { _count: { select: { comments: true, likes: true } } },
     }),
-    getActiveRecruitments(3),
+    getActiveRecruitments(),
   ]);
   const activePostIds = new Set(activeRecruitments.map((request) => request.activityPostId).filter(Boolean));
   const otherActivities = activities.filter((activity) => !activePostIds.has(activity.id));
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+    <div className="bg-white"><div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 text-[#17283f]">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3"><Calendar className="w-6 h-6 text-primary" /><h1 className="text-2xl font-bold text-text-primary">社区活动</h1></div>
-        <Link href="/ai-requests" className="inline-flex items-center gap-2 bg-[#4870ff] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#5b80ff]"><Plus className="h-4 w-4" />提交 AI 项目需求</Link>
+        <div className="flex items-center gap-3"><Calendar className="w-6 h-6 text-primary" /><h1 className="text-2xl font-bold">社区活动</h1></div>
+        <Link href="/ai-requests/new" className="inline-flex items-center gap-2 bg-[#073a83] px-4 py-2.5 text-sm font-bold text-white"><Plus className="h-4 w-4" />提交 AI 项目需求</Link>
       </div>
 
       <RecruitmentSpotlight recruitments={activeRecruitments} compact />
 
       {otherActivities.length === 0 && activeRecruitments.length === 0 ? (
         <div className="text-center py-16">
-          <div className="text-6xl mb-4">🎉</div>
-          <h3 className="text-lg font-medium text-text-primary mb-2">暂无活动</h3>
-          <p className="text-sm text-text-secondary">敬请期待新的活动发布！</p>
+          <h2 className="text-lg font-medium">暂无社区活动</h2>
         </div>
       ) : (
         otherActivities.length > 0 && <section className={activeRecruitments.length > 0 ? "mt-12 border-t border-[#d8e0ee] pt-8" : ""}>
@@ -48,6 +46,6 @@ export default async function ActivitiesPage() {
           </div>
         </section>
       )}
-    </div>
+    </div></div>
   );
 }

@@ -59,7 +59,7 @@ export default function TiptapEditor({ content = "", onChange, placeholder }: Ti
     try {
       for (const file of files) {
         const url = await uploadImage(file);
-        editorRef.current.chain().focus().setImage({ src: url, alt: file.name }).run();
+        editorRef.current?.chain().focus().setImage({ src: url, alt: file.name }).run();
       }
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "上传失败");
@@ -110,7 +110,10 @@ export default function TiptapEditor({ content = "", onChange, placeholder }: Ti
     },
   });
 
-  editorRef.current = editor;
+  useEffect(() => {
+    editorRef.current = editor;
+    return () => { editorRef.current = null; };
+  }, [editor]);
 
   const toggleMode = useCallback(() => {
     if (!editor) return;

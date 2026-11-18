@@ -86,6 +86,7 @@ model AiProject {
   progress AiProjectProgress[]
   actions  AiActionItem[]
   request  AiDemandRequest?    @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  weeklyUpdates AiWeeklyUpdate[]
 }
 
 model AiProjectProgress {
@@ -188,6 +189,7 @@ model AiDemandRequest {
   teamMembers  AiProjectTeamMember[]
   allocations  AiProjectPointAllocation[]
   logs         AiWorkflowLog[]
+  weeklyUpdates AiWeeklyUpdate[]
 
   @@index([status, createdAt])
   @@index([requesterEmail])
@@ -282,4 +284,23 @@ model AiWorkflowLog {
   request AiDemandRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
   @@index([requestId, createdAt])
+}
+
+model AiWeeklyUpdate {
+  id           String   @id @default(cuid())
+  requestId    String?
+  projectId    String?
+  weekStart    String
+  achievement  String
+  nextStep     String
+  blocker      String   @default("")
+  author       String
+  updatedAt    DateTime @updatedAt
+
+  request AiDemandRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  project AiProject?       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, weekStart])
+  @@unique([projectId, weekStart])
+  @@index([weekStart])
 }

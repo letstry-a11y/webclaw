@@ -3,14 +3,13 @@ import { prisma } from "@/lib/prisma";
 
 export type ActiveRecruitment = Prisma.AiDemandRequestGetPayload<{ include: { activityPost: true } }>;
 
-export function getActiveRecruitments(take = 3) {
+export function getActiveRecruitments(take?: number) {
   return prisma.aiDemandRequest.findMany({
     where: {
       status: "recruiting",
-      recruitmentDeadline: { gte: new Date() },
       activityPost: { is: { isPublished: true } },
     },
-    orderBy: [{ basePointPool: "desc" }, { recruitmentDeadline: "asc" }, { updatedAt: "desc" }],
+    orderBy: [{ basePointPool: "desc" }, { recruitmentDeadline: "asc" }, { updatedAt: "desc" }, { id: "asc" }],
     take,
     include: { activityPost: true },
   });
