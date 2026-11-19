@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { projectLeadSelection, projectOwnerNames } from "@/lib/ai-project-leads";
 import { committeeAssistants, effectCoefficientValues } from "@/lib/ai-project-workflow";
 import { calculatePointAllocations } from "@/lib/ai-point-allocation";
 import { aiProjectApplicationSchema } from "@/lib/ai-project-application";
@@ -255,16 +256,18 @@ export async function updateApplicationStatus(applicationId: string, requestId: 
   refreshWorkflow(requestId);
 }
 
-export async function confirmTeam(requestId: string, formData: FormData) {
-  const leadApplicationId = z.string().min(1).parse(formData.get("leadApplicationId"));
-  await prisma.$transaction(async (tx) => {
-    const changed = await tx.aiDemandRequest.updateMany({ where: { id: requestId, status: "recruiting" }, data: { status: "team_confirmed" } });
-    if (!changed.count) return;
+export async function confirmTeam(requestId: string, _previous: FormResult, formData: FormData): Promise<FormResult> {
+  const leadIds = new Set(formData.getAll("leadApplicationId"));
+  if (!leadIds.size) return { error: "请至少选择一位项目负责人。" };
+  const result = await prisma.$transaction(async (tx) => {
     const request = await tx.aiDemandRequest.findUniqueOrThrow({
-      where: { id: requestId }, include: { applications: { where: { status: "selected" } } },
+      where: { id: requestId }, include: { applications: { where: { status: "selected" }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] } },
     });
-    const lead = request.applications.find((application) => application.id === leadApplicationId);
-    if (!lead) throw new Error("项目负责人必须来自已入选人员");
+    const leads = request.applications.filter((application) => leadIds.has(application.id));
+    if (leads.length !== leadIds.size) return { error: "项目负责人须从本项目已入选人员中选择。" };
+    const changed = await tx.aiDemandRequest.updateMany({ where: { id: requestId, status: "recruiting" }, data: { status: "team_confirmed" } });
+    if (!changed.count) return { error: "本轮招募已结束，请刷新查看团队。" };
+    const owner = projectOwnerNames(leads).join("、");
 
     for (const application of request.applications) {
       await tx.aiProjectTeamMember.create({
@@ -276,28 +279,30 @@ export async function confirmTeam(requestId: string, formData: FormData) {
           email: application.email,
           role: application.intendedRole,
           responsibility: application.skills,
-          isLead: application.id === leadApplicationId,
+          isLead: leadIds.has(application.id),
         },
       });
     }
     const lastProject = await tx.aiProject.findFirst({ orderBy: { order: "desc" }, select: { order: true } });
     await tx.aiProject.upsert({
       where: { requestId },
-      update: { owner: lead.name, status: "planning" },
+      update: { owner, status: "planning" },
       create: {
         requestId,
         name: request.title,
         subtitle: request.desiredFunctions,
         businessImpact: request.businessValue,
-        owner: lead.name,
+        owner,
         releasePlan: request.targetDate ? new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(request.targetDate) : "待团队确认",
         status: "planning",
         order: (lastProject?.order ?? 0) + 1,
       },
     });
-    await tx.aiWorkflowLog.create({ data: { requestId, action: "团队已确认并进入 AI 看板", actor: lead.name, detail: `团队共 ${request.applications.length} 人` } });
+    await tx.aiWorkflowLog.create({ data: { requestId, action: "团队已确认并进入 AI 看板", actor: "需求方/项目负责人", detail: `负责人 ${owner}，团队共 ${request.applications.length} 人` } });
+    return { success: "团队已确认并进入 AI 看板。" };
   });
-  refreshWorkflow(requestId);
+  if (result.success) refreshWorkflow(requestId);
+  return result;
 }
 
 const transitions = {
@@ -335,14 +340,16 @@ export async function scoreProject(requestId: string, formData: FormData) {
   await prisma.$transaction(async (tx) => {
     const changed = await tx.aiDemandRequest.updateMany({ where: { id: requestId, status: "delivered_pending_review" }, data: { status: "scored_pending_allocation" } });
     if (!changed.count) return;
-    const request = await tx.aiDemandRequest.findUniqueOrThrow({ where: { id: requestId }, include: { teamMembers: true, project: true } });
+    const request = await tx.aiDemandRequest.findUniqueOrThrow({ where: { id: requestId }, include: { teamMembers: { orderBy: projectLeadSelection.orderBy }, project: true } });
     if (!request.basePointPool) throw new Error("请先核对项目基础积分");
     const finalPointPool = Math.round(request.basePointPool * data.effectCoefficient);
     const leadByEmail = request.teamMembers.find((member) => member.email === data.leadEmail);
     const currentLead = request.teamMembers.find((member) => member.isLead);
 
-    await tx.aiProjectTeamMember.updateMany({ where: { requestId }, data: { isLead: false } });
     if (leadByEmail) {
+      if (currentLead && !leadByEmail.isLead) {
+        await tx.aiProjectTeamMember.update({ where: { id: currentLead.id }, data: { isLead: false } });
+      }
       await tx.aiProjectTeamMember.update({
         where: { id: leadByEmail.id },
         data: { name: data.leadName, department: data.leadDepartment, role: data.leadRole, isLead: true },
@@ -357,7 +364,9 @@ export async function scoreProject(requestId: string, formData: FormData) {
         data: { requestId, name: data.leadName, department: data.leadDepartment, email: data.leadEmail, role: data.leadRole, isLead: true },
       });
     }
-    if (request.project) await tx.aiProject.update({ where: { id: request.project.id }, data: { owner: data.leadName } });
+    const leads = await tx.aiProjectTeamMember.findMany({ ...projectLeadSelection, where: { requestId, isLead: true } });
+    const owner = projectOwnerNames(leads).join("、");
+    if (request.project) await tx.aiProject.update({ where: { id: request.project.id }, data: { owner } });
     await tx.aiDemandRequest.update({
       where: { id: requestId },
       data: {
@@ -374,7 +383,7 @@ export async function scoreProject(requestId: string, formData: FormData) {
         requestId,
         action: "AI发展委员会确认结题成效系数",
         actor: data.reviewedBy,
-        detail: `主要负责人 ${data.leadName}，成效系数 ${data.effectCoefficient}，最终积分 ${finalPointPool}`,
+        detail: `项目负责人 ${owner}，成效系数 ${data.effectCoefficient}，最终积分 ${finalPointPool}`,
       },
     });
   });

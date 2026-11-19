@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { projectLeadSelection, projectOwnerNames } from "@/lib/ai-project-leads";
 import { productStages, progressLogAction } from "@/lib/ai-project-portfolio";
 import { formatProjectDate } from "@/lib/ai-project-workflow";
 import ActionForm from "@/components/ai/ActionForm";
@@ -13,13 +14,13 @@ export const metadata = { title: "产品资料 · Medbot" };
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const product = await prisma.aiProject.findUnique({ where: { id }, include: {
-    request: { select: { id: true, committeeAssistant: true, teamMembers: { where: { isLead: true }, take: 1, select: { name: true } },
+    request: { select: { id: true, committeeAssistant: true, teamMembers: projectLeadSelection,
       logs: { where: { action: progressLogAction }, orderBy: { createdAt: "desc" }, select: { detail: true, createdAt: true } } } },
     actions: { orderBy: [{ isCompleted: "asc" }, { dueDate: "asc" }] }, progress: { orderBy: { createdAt: "desc" } },
   } });
   if (!product) notFound();
   const req = product.request;
-  const owner = req?.teamMembers[0]?.name || product.owner;
+  const owner = projectOwnerNames(req?.teamMembers, product.owner).join("、");
   const history = [...product.progress, ...(req?.logs ?? []).map((l) => ({ content:l.detail, createdAt:l.createdAt }))].sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
   const state = Object.hasOwn(productStages, product.status) ? productStages[product.status as keyof typeof productStages].label : "状态待核对";
   return <div className="portfolio-shell"><div className="portfolio-wrap max-w-5xl!">

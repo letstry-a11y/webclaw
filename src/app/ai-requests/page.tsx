@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { projectLeadSelection, projectOwnerNames } from "@/lib/ai-project-leads";
 import { formatProjectDate, requestStatusMeta, type AiRequestStatus } from "@/lib/ai-project-workflow";
 import { ArrowRight, Building2, CalendarClock, CheckCircle2, CircleDollarSign, ClipboardCheck, ClipboardList, Handshake, Plus, ShieldCheck, Sparkles, UserCheck, Users } from "lucide-react";
 
@@ -24,7 +25,7 @@ export default async function AiRequestsPage() {
   const requests = await prisma.aiDemandRequest.findMany({
     orderBy: { updatedAt: "desc" },
     include: {
-      teamMembers: { where: { isLead: true }, take: 1, select: { name: true } },
+      teamMembers: projectLeadSelection,
       project: { select: { owner: true } },
     },
   });
@@ -76,7 +77,7 @@ export default async function AiRequestsPage() {
                     <div className="grid gap-px bg-[#d8e0ee] md:grid-cols-2">
                       {groupedRequests.map((request, index) => {
                         const status = requestStatusMeta[request.status as AiRequestStatus] ?? requestStatusMeta.pending_review;
-                        const lead = request.teamMembers[0]?.name || request.project?.owner || "待确认";
+                        const lead = projectOwnerNames(request.teamMembers, request.project?.owner).join("、") || "待确认";
                         const fillsLastRow = groupedRequests.length % 2 === 1 && index === groupedRequests.length - 1;
                         return (
                           <Link key={request.id} href={`/ai-requests/${request.id}`} className={`group bg-white p-5 hover:bg-[#f8faff] sm:p-6 ${fillsLastRow ? "md:col-span-2" : ""}`}>
@@ -85,7 +86,7 @@ export default async function AiRequestsPage() {
                             <p className="mt-2 line-clamp-2 text-sm leading-6 text-[#52627d]">{request.businessValue}</p>
                             <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-[#e2e8f2] pt-4 text-xs">
                               <div className="flex min-w-0 items-center gap-1.5"><Building2 className="h-3.5 w-3.5 shrink-0 text-[#8491a8]" /><dt className="text-[#8491a8]">需求方</dt><dd className="truncate font-bold text-[#34445e]">{request.requesterName} · {request.requesterDepartment}</dd></div>
-                              <div className="flex min-w-0 items-center gap-1.5"><UserCheck className="h-3.5 w-3.5 shrink-0 text-[#8491a8]" /><dt className="text-[#8491a8]">负责人</dt><dd className="truncate font-bold text-[#34445e]">{lead}</dd></div>
+                              <div className="flex min-w-0 items-center gap-1.5"><UserCheck className="h-3.5 w-3.5 shrink-0 text-[#8491a8]" /><dt className="shrink-0 text-[#8491a8]">负责人</dt><dd className="font-bold text-[#34445e]">{lead}</dd></div>
                               <div className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-[#8491a8]" /><dt className="text-[#8491a8]">等级</dt><dd className="font-bold text-[#34445e]">{request.projectLevel ? `${request.projectLevel} 级` : "待评审"}</dd></div>
                               <div className="flex items-center gap-1.5"><CalendarClock className="h-3.5 w-3.5 text-[#8491a8]" /><dt className="text-[#8491a8]">积分包</dt><dd className="font-bold text-[#34445e]">{request.basePointPool?.toLocaleString("zh-CN") ?? "待评审"}</dd></div>
                               <div className="col-span-2 flex min-w-0 items-center gap-1.5"><Handshake className="h-3.5 w-3.5 shrink-0 text-[#8491a8]" /><dt className="text-[#8491a8]">AI发展委员会协助人</dt><dd className="truncate font-bold text-[#34445e]">{request.committeeAssistant || "待评审时指定"}</dd></div>

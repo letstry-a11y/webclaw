@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
+import { projectLeadSelection, projectOwnerNames } from "./ai-project-leads";
 import { requestStatuses, requestStatusMeta, type AiRequestStatus } from "./ai-project-workflow";
 import { shanghaiDate } from "./report-week";
 
@@ -47,7 +48,7 @@ const requestSelect = {
   id: true, title: true, businessValue: true, status: true, requesterName: true, requesterDepartment: true,
   committeeAssistant: true, projectLevel: true, basePointPool: true, finalPointPool: true, targetDate: true,
   createdAt: true, updatedAt: true, project: { select: projectSelect },
-  teamMembers: { where: { isLead: true }, take: 1, orderBy: { id: "asc" }, select: { name: true } },
+  teamMembers: projectLeadSelection,
   _count: { select: { applications: true, teamMembers: true } },
   allocations: { select: { issuedPoints: true } },
   logs: { orderBy: [...latestFirst], take: 1, select: { action: true, detail: true, createdAt: true } },
@@ -87,7 +88,8 @@ function portfolioRow(request: Demand | null, product: Product | null, now: Date
   ].reduce((latest, item) => item.at >= latest.at ? item : latest);
   const registeredAt = product && product.createdAt < record.createdAt ? product.createdAt : record.createdAt;
   const updatedAt = new Date(Math.max(activity.at.getTime(), record.updatedAt.getTime(), product?.updatedAt.getTime() ?? 0));
-  const owner = request?.teamMembers[0]?.name.trim() || product?.owner.trim() || null;
+  const owners = projectOwnerNames(request?.teamMembers, product?.owner);
+  const owner = owners.join("、") || null;
   const targetDate = request?.targetDate ? shanghaiDate(request.targetDate) : null;
   const flags: Flag[] = [];
   if (request && ["intake", "closing"].includes(stage.phase)) flags.push("decision");
@@ -100,7 +102,7 @@ function portfolioRow(request: Demand | null, product: Product | null, now: Date
     title: product?.name.trim() || request?.title || "未命名产品", requestTitle: request?.title ?? null,
     href: request ? `/ai-requests/${request.id}` : `/ai-projects/products/${product!.id}`,
     productId: product?.id ?? null, businessImpact: product?.businessImpact.trim() || request?.businessValue || "",
-    stage, flags, owner, level: request?.projectLevel ?? null,
+    stage, flags, owner, owners, level: request?.projectLevel ?? null,
     basePoints: request?.basePointPool ?? null, finalPoints: request?.finalPointPool ?? null,
     issuedPoints: request?.allocations.reduce((sum, item) => sum + item.issuedPoints, 0) ?? null,
     requester: request?.requesterName || null, department: request?.requesterDepartment || null,
@@ -146,7 +148,7 @@ export function filterPortfolio(rows: PortfolioRow[], filters: PortfolioFilters 
     const text = [row.title, row.requestTitle, row.owner, row.requester, row.department, row.assistant].join(" ").toLocaleLowerCase();
     return (!needle || text.includes(needle)) && (!filters.phase || filters.phase === row.stage.phase) &&
       (!filters.stage || filters.stage === row.stage.code) &&
-      (!filters.owner || filters.owner === (row.owner ?? "_unassigned")) &&
+      (!filters.owner || (filters.owner === "_unassigned" ? !row.owners.length : row.owners.includes(filters.owner))) &&
       (!filters.flag || row.flags.includes(filters.flag as Flag));
   });
   return filtered.sort((a, b) => {
