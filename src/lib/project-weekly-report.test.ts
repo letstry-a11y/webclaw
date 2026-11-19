@@ -45,6 +45,13 @@ test("portfolio and weekly exports use one canonical row per project and only ev
     const product = await prisma.aiProject.create({ data: { name: "=样例|项目", owner: "旧负责人", requestId:req.id, createdAt: registered, updatedAt: registered } });
     await prisma.aiDemandRequest.update({ where:{ id:req.id }, data: { status:"warranty", basePointPool:1000, finalPointPool:1200, projectLevel:2 } });
     const lead = await prisma.aiProjectTeamMember.create({ data: { requestId:req.id, name:"负责人甲", email:"owner@example.invalid", department:"测试组", role:"负责人", isLead:true } });
+    const single = (await loadPortfolio(now)).find((row) => row.id === requestKey)!;
+    assert.equal(single.owner, "负责人甲");
+    assert.deepEqual(single.owners, ["负责人甲"]);
+    await prisma.aiProjectTeamMember.createMany({ data: [
+      { requestId: req.id, name: "负责人乙", email: "co-lead@example.invalid", department: "测试组", role: "负责人", isLead: true },
+      { requestId: req.id, name: "成员丙", email: "member@example.invalid", department: "测试组", role: "成员" },
+    ] });
     await prisma.aiProjectPointAllocation.create({ data:{requestId:req.id, teamMemberId:lead.id, proposedPoints:1200, issuedPoints:840, warrantyPoints:360} });
     await prisma.aiWorkflowLog.createMany({ data: [
       { requestId:req.id, action:"周内变更", actor:"测试", createdAt:new Date("2025-01-12T15:59:59.999Z") },
@@ -58,18 +65,23 @@ test("portfolio and weekly exports use one canonical row per project and only ev
     const row = report.projects.find((item) => item.id === requestKey)!;
     assert.equal(row.productId, product.id);
     assert.equal(row.stage.phase, "warranty");
-    assert.equal(row.owner, "负责人甲");
+    assert.equal(row.owner, "负责人甲、负责人乙");
+    assert.deepEqual(row.owners, ["负责人甲", "负责人乙"]);
     assert.deepEqual([row.basePoints,row.finalPoints,row.issuedPoints], [1000,1200,840]);
     assert.equal(row.flags.includes("overdue"), false);
     assert.deepEqual(row.week.events.map((e)=>e.text), ["联调通过", "周内变更"]);
     assert.equal(row.latestProgress, "下周变更");
-    assert.equal(filterPortfolio(report.projects, { owner:row.owner!, q:"测试组" })[0].id, requestKey);
+    for (const owner of row.owners) {
+      assert.deepEqual(filterPortfolio(report.projects, { owner, q: "测试组" }).map((project) => project.id), [requestKey]);
+    }
+    assert.equal(filterPortfolio(report.projects, { owner: "成员丙" }).length, 0);
     const next = await loadWeeklyReport(reportingWeek("2025-01-13")!, now);
     assert.deepEqual(next.weekTotals, { newProjects:0, changedProjects:1, reportedProjects:0, blockedProjects:0 });
     const csv = reportCsv(report);
     assert.ok(csv.startsWith("\uFEFF"));
     assert.ok(csv.includes(`"'=样例|项目"`) && csv.includes('示例,""一""\n第二行'));
     assert.ok(reportMarkdown(report).includes("=样例\\|项目"));
+    assert.ok(csv.includes(row.owner) && reportMarkdown(report).includes(row.owner));
     assert.ok(!JSON.stringify(report).includes("@example.invalid"));
     const { settleWarrantyPoints } = await import("./ai-project-settlement");
     await prisma.aiPointMember.create({ data:{ name:lead.name, email:lead.email, historicalPoints:840, availablePoints:840 } });

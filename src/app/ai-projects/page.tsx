@@ -19,7 +19,7 @@ export default async function PortfolioPage({ searchParams }: { searchParams: Pr
   }
   const items = filterPortfolio(all, filters);
   const totals = summarize(all);
-  const owners = [...new Set(all.flatMap((row) => row.owner ? [row.owner] : []))].sort((a,b) => a.localeCompare(b, "zh-CN"));
+  const owners = [...new Set(all.flatMap((row) => row.owners))].sort((a,b) => a.localeCompare(b, "zh-CN"));
   const stages = [...new Map(all.map((row) => [row.stage.code, row.stage])).values()]
     .sort((a, b) => portfolioStagePosition(a) - portfolioStagePosition(b) || a.label.localeCompare(b.label, "zh-CN"));
   const hasAdvancedFilters = Boolean(filters.owner || filters.stage || filters.flag || (filters.sort && filters.sort !== "stage"));

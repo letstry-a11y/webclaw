@@ -79,7 +79,7 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
       activityPost: true,
       project: true,
       applications: { orderBy: { createdAt: "asc" } },
-      teamMembers: { include: { allocation: true }, orderBy: [{ isLead: "desc" }, { createdAt: "asc" }] },
+      teamMembers: { include: { allocation: true }, orderBy: [{ isLead: "desc" }, { createdAt: "asc" }, { id: "asc" }] },
       logs: { orderBy: { createdAt: "desc" } },
     },
   });
@@ -88,7 +88,8 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
   const status = requestStatusMeta[request.status as AiRequestStatus] ?? requestStatusMeta.pending_review;
   const currentIndex = requestStatuses.indexOf(request.status as AiRequestStatus);
   const selectedApplications = request.applications.filter((application) => application.status === "selected");
-  const projectLead = request.teamMembers.find((member) => member.isLead);
+  const leads = request.teamMembers.filter((member) => member.isLead);
+  const projectLead = leads[0];
   const attachments = parseAttachments(request.attachments);
   const currentAllocationRatios = inferRatioTenths(
     request.finalPointPool ?? 0,
@@ -161,7 +162,18 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
                 </section>
 
                 {selectedApplications.length > 0 && (
-                  <form action={confirmTeam.bind(null, id)} className={`${panelClass} space-y-4`}><div><h2 className="text-2xl font-black">确认项目团队</h2><p className="mt-1 text-sm leading-6 text-[#6b7890]">确认后将自动创建 AI 看板项目，并关闭本轮招募。</p></div><div><label className={labelClass} htmlFor="field-leadApplicationId">指定项目负责人</label><select className={fieldClass} id="field-leadApplicationId" name="leadApplicationId" required defaultValue=""><option value="" disabled>请选择已入选成员</option>{selectedApplications.map((application) => <option key={application.id} value={application.id}>{application.name} · {application.department} · {application.intendedRole}</option>)}</select></div><button className="inline-flex items-center gap-2 bg-[#032a72] px-5 py-3 text-sm font-black text-white hover:bg-[#0d3d88]" type="submit"><Users className="h-4 w-4" />确认团队并进入 AI 看板</button></form>
+                  <ActionForm action={confirmTeam.bind(null, id)} button="确认团队并进入 AI 看板" className={`${panelClass} space-y-4`}>
+                    <div><h2 className="text-2xl font-black">确认项目团队</h2><p className="mt-1 text-sm leading-6 text-[#6b7890]">确认后将自动创建 AI 看板项目，并关闭本轮招募。</p></div>
+                    <fieldset className="space-y-2">
+                      <legend className={labelClass}>指定项目负责人（可多选）</legend>
+                      {selectedApplications.map((application) => (
+                        <label key={application.id} className="flex items-center gap-2 text-sm">
+                          <input type="checkbox" name="leadApplicationId" value={application.id} />
+                          {application.name} · {application.department} · {application.intendedRole}
+                        </label>
+                      ))}
+                    </fieldset>
+                  </ActionForm>
                 )}
               </>
             )}
@@ -173,6 +185,7 @@ export default async function AiRequestDetailPage({ params }: { params: Promise<
             {request.status === "delivered_pending_review" && (
               <form action={scoreProject.bind(null, id)} className={`${panelClass} space-y-5`}>
                 <div><p className="font-mono text-[10px] tracking-[0.18em] text-[#032a72]">FINAL REVIEW</p><h2 className="mt-2 text-2xl font-black">AI发展委员会结题评审</h2><p className="mt-2 text-sm leading-6 text-[#6b7890]">AI发展委员会按激励政策直接确定成效系数；系统据此计算最终积分总包。</p></div>
+                {leads.length > 1 && <p className="text-sm">共同负责人　{leads.map((lead) => lead.name).join("、")}</p>}
                 <fieldset className="border border-[#d8e0ee] bg-[#fafbfd] p-4"><legend className="px-2 text-sm font-black">主要负责人信息</legend><div className="grid gap-3 sm:grid-cols-2"><div><label className={labelClass} htmlFor="field-leadName">姓名</label><input className={fieldClass} id="field-leadName" name="leadName" required maxLength={50} defaultValue={projectLead?.name ?? request.project?.owner ?? ""} /></div><div><label className={labelClass} htmlFor="field-leadDepartment">部门</label><input className={fieldClass} id="field-leadDepartment" name="leadDepartment" required maxLength={80} defaultValue={projectLead?.department ?? ""} /></div><div><label className={labelClass} htmlFor="field-leadEmail">企业邮箱</label><input className={fieldClass} id="field-leadEmail" name="leadEmail" type="email" required maxLength={120} defaultValue={projectLead?.email ?? ""} /></div><div><label className={labelClass} htmlFor="field-leadRole">项目角色</label><input className={fieldClass} id="field-leadRole" name="leadRole" required maxLength={100} defaultValue={projectLead?.role ?? "项目负责人"} /></div></div></fieldset>
                 <div className="grid gap-3 sm:grid-cols-2"><div><label className={labelClass} htmlFor="field-effectCoefficient">成效系数</label><select className={fieldClass} id="field-effectCoefficient" name="effectCoefficient" required defaultValue=""><option value="" disabled>请选择激励政策分档</option>{effectCoefficientOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></div><div><label className={labelClass} htmlFor="field-reviewedBy-2">评审人</label><input className={fieldClass} id="field-reviewedBy-2" name="reviewedBy" required maxLength={80} defaultValue="AI发展委员会" /></div></div>
                 <div><label className={labelClass} htmlFor="field-comment">结题评语</label><textarea className={fieldClass} id="field-comment" name="comment" required rows={3} maxLength={2000} /></div><button className="inline-flex items-center gap-2 bg-[#4870ff] px-5 py-3 text-sm font-black text-white"><ClipboardCheck className="h-4 w-4" />确认成效系数并计算最终积分</button>
