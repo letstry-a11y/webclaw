@@ -23,12 +23,17 @@ const stages: Record<AiRequestStatus, { phase: Phase; next: string }> = {
   completed: { phase: "completed", next: "流程已结束" },
 };
 export const productStages = {
-  planning: { label: "规划中", phase: "intake" },
-  developing: { label: "开发中", phase: "execution" },
-  evaluating: { label: "试用评估", phase: "execution" },
-  delivered: { label: "已交付", phase: "closing" },
-  launched: { label: "已上线", phase: "completed" },
-} as const;
+  planning: { label: "规划中", workflowStatus: "pending_review" },
+  developing: { label: "开发中", workflowStatus: "developing" },
+  evaluating: { label: "试用评估", workflowStatus: "trial" },
+  delivered: { label: "已交付", workflowStatus: "delivered_pending_review" },
+  launched: { label: "已上线", workflowStatus: "completed" },
+} as const satisfies Record<string, { label: string; workflowStatus: AiRequestStatus }>;
+
+const stagePositions = new Map<string, number>(requestStatuses.map((code, index) => [code, index]));
+for (const [code, { workflowStatus }] of Object.entries(productStages)) {
+  stagePositions.set(code, requestStatuses.indexOf(workflowStatus));
+}
 
 const latestFirst = [{ createdAt: "desc" }, { id: "desc" }] as const;
 const projectSelect = {
@@ -64,7 +69,8 @@ function describeStage(request: Demand | null, product: Product | null) {
     }
   } else if (product && Object.hasOwn(productStages, product.status)) {
     const stage = productStages[product.status as keyof typeof productStages];
-    return { ...stage, code: product.status, next: product.releasePlan || "维护产品资料", workflowPercent: null };
+    return { phase: stages[stage.workflowStatus].phase, label: stage.label, code: product.status,
+      next: product.releasePlan || "维护产品资料", workflowPercent: null };
   }
   return { phase: "other" as const, code: request?.status ?? product?.status ?? "", label: "状态待核对", next: "核对项目记录", workflowPercent: null };
 }
@@ -108,6 +114,10 @@ function portfolioRow(request: Demand | null, product: Product | null, now: Date
 
 export type PortfolioRow = ReturnType<typeof portfolioRow>;
 
+export function portfolioStagePosition(stage: PortfolioRow["stage"]) {
+  return stage.phase === "other" ? requestStatuses.length : stagePositions.get(stage.code) ?? requestStatuses.length;
+}
+
 export async function readPortfolio(tx: Prisma.TransactionClient, now: Date) {
   const requests = await tx.aiDemandRequest.findMany({ select: requestSelect });
   const standalone = await tx.aiProject.findMany({ where: { requestId: null }, select: projectSelect });
@@ -143,9 +153,11 @@ export function filterPortfolio(rows: PortfolioRow[], filters: PortfolioFilters 
     let rank = 0;
     if (filters.sort === "points") rank = (b.finalPoints ?? b.basePoints ?? -1) - (a.finalPoints ?? a.basePoints ?? -1);
     else if (filters.sort === "due") rank = (a.targetDate ?? "9999").localeCompare(b.targetDate ?? "9999");
-    else if (filters.sort !== "updated") {
+    else if (filters.sort === "priority") {
       const priority = (r: PortfolioRow) => r.flags.includes("decision") ? 0 : r.flags.includes("overdue") ? 1 : r.stage.phase === "completed" ? 3 : 2;
       rank = priority(a) - priority(b);
+    } else if (filters.sort !== "updated") {
+      rank = portfolioStagePosition(a.stage) - portfolioStagePosition(b.stage);
     }
     return rank || b.updatedAt.localeCompare(a.updatedAt) || a.id.localeCompare(b.id);
   });

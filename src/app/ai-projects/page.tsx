@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import Form from "next/form";
 import Link from "next/link";
 import { ArrowRight, BookOpen, CalendarDays, ClipboardList, Plus, Search } from "lucide-react";
-import { filterPortfolio, flagNames, loadPortfolio, phaseNames, summarize, type PortfolioFilters } from "@/lib/ai-project-portfolio";
+import { filterPortfolio, flagNames, loadPortfolio, phaseNames, portfolioStagePosition, summarize, type PortfolioFilters } from "@/lib/ai-project-portfolio";
 import { shanghaiDate } from "@/lib/report-week";
+import PortfolioSortSelect from "./PortfolioSortSelect";
 
 export const metadata: Metadata = { title: "AI 项目总览 · Medbot", description: "项目清单、流程进展、负责人及积分台账" };
 export const dynamic = "force-dynamic";
@@ -18,7 +20,9 @@ export default async function PortfolioPage({ searchParams }: { searchParams: Pr
   const items = filterPortfolio(all, filters);
   const totals = summarize(all);
   const owners = [...new Set(all.flatMap((row) => row.owner ? [row.owner] : []))].sort((a,b) => a.localeCompare(b, "zh-CN"));
-  const stages = new Map(all.map((row) => [row.stage.code, row.stage.label]));
+  const stages = [...new Map(all.map((row) => [row.stage.code, row.stage])).values()]
+    .sort((a, b) => portfolioStagePosition(a) - portfolioStagePosition(b) || a.label.localeCompare(b.label, "zh-CN"));
+  const hasAdvancedFilters = Boolean(filters.owner || filters.stage || filters.flag || (filters.sort && filters.sort !== "stage"));
   function listHref(changes: PortfolioFilters) {
     const query = new URLSearchParams();
     for (const [key, value] of Object.entries({ ...filters, ...changes })) if (value) query.set(key, value);
@@ -49,20 +53,20 @@ export default async function PortfolioPage({ searchParams }: { searchParams: Pr
               </Link>
             ))}
           </nav>
-          <form className="portfolio-filters" method="get" action="/ai-projects#project-list" key={JSON.stringify(filters)}>
+          <Form className="portfolio-filters" action="/ai-projects#project-list" key={JSON.stringify(filters)}>
             {filters.phase && <input type="hidden" name="phase" value={filters.phase}/>}
             <label className="portfolio-search">搜索项目或人员<input name="q" type="search" defaultValue={filters.q} maxLength={150} placeholder="项目名、姓名或部门"/></label>
-            <input className="filter-toggle" id="more-filters" type="checkbox" defaultChecked={Boolean(filters.owner || filters.stage || filters.flag || filters.sort)}/>
+            <input className="filter-toggle" id="more-filters" type="checkbox" defaultChecked={hasAdvancedFilters}/>
             <label className="filter-toggle-label" htmlFor="more-filters">更多筛选</label>
             <div className="filter-options">
-            <label>流程节点<select name="stage" defaultValue={filters.stage}><option value="">全部节点</option>{[...stages].map(([code,label]) => <option key={code} value={code}>{label}</option>)}</select></label>
+            <label>流程节点<select name="stage" defaultValue={filters.stage}><option value="">全部节点</option>{stages.map(({code,label}) => <option key={code} value={code}>{label}</option>)}</select></label>
             <label>负责人<select name="owner" defaultValue={filters.owner}><option value="">全部负责人</option><option value="_unassigned">待确认</option>{owners.map((owner) => <option key={owner}>{owner}</option>)}</select></label>
             <label>提醒<select name="flag" defaultValue={filters.flag}><option value="">全部提醒</option>{Object.entries(flagNames).map(([key,label]) => <option key={key} value={key}>{label}</option>)}</select></label>
-            <label>排序<select name="sort" defaultValue={filters.sort}><option value="">管理优先</option><option value="points">积分从高到低</option><option value="updated">最近更新</option><option value="due">目标日期</option></select></label>
+            <PortfolioSortSelect sort={filters.sort}/>
             </div>
             <button className="portfolio-button" type="submit"><Search size={15}/>筛选</button>
-            {Object.values(filters).some(Boolean) && <Link className="portfolio-text-link" href="/ai-projects#project-list">重置</Link>}
-          </form>
+            {(filters.q || filters.phase || hasAdvancedFilters) && <Link className="portfolio-text-link" href="/ai-projects#project-list">重置</Link>}
+          </Form>
           {items.length ? <div className="portfolio-table-wrap"><table className="portfolio-table">
             <caption className="sr-only">项目进展及积分清单</caption>
             <thead><tr><th scope="col">项目 / 需求方</th><th scope="col">负责人 / 委员会协助人</th><th scope="col">积分（分）</th><th scope="col">流程进度 / 最近进展</th><th scope="col">时间与提醒</th></tr></thead>
