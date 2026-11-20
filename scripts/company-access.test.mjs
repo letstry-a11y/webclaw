@@ -71,6 +71,16 @@ test("company approval, initial-device login, password changes, resets and prote
     assert.equal((await admin("/api/auth/login",{email:"admin", password:adminPassword})).status,401);
     assert.equal((await admin("/api/auth/login",{email:"admin",password:adminPassword,activation:proof(adminLink)})).status,200);
     assert.equal((await admin("/admin/users")).status,200);
+    for (const [url, action] of [["/login", "/api/auth/login"], ["/register", "/api/auth/register"], ["/account", "/api/auth/change-password"]]) {
+      const response = await admin(url);
+      assert.equal(response.status, 200, url);
+      const html = await response.text();
+      const forms = html.match(/<form\b[^>]*>\s*<fieldset\b[^>]*>/g) || [];
+      const form = forms.find(tag => tag.includes(`action="${action}"`));
+      assert.ok(form, `Server-rendered account form for ${url}`);
+      assert.match(form, /method="post"/i);
+      assert.match(form, /<fieldset\b[^>]*\bdisabled\b/);
+    }
     const manage="/api/admin/users/"+pending.id;
     const approval=await admin(manage,{action:"approve",version:pending.sessionVersion}); assert.equal(approval.status,200);
     const first=proof((await approval.json()).activationLink);

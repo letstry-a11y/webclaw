@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import AccountForm from "@/components/auth/AccountForm";
 import { authInputClass, authButtonClass } from "@/components/auth/AuthShell";
 
 export default function RegisterForm() {
@@ -11,13 +12,13 @@ export default function RegisterForm() {
     const body = Object.fromEntries(new FormData(event.currentTarget));
     setBusy(true);
     try {
-      const response = await fetch("/api/auth/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const response = await fetch(event.currentTarget.action, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await response.json();
       setResult(response.ok ? data.message : data.error); setDone(response.ok);
     } catch { setResult("申请未能送达，请重试。"); }
     finally { setBusy(false); }
   }
-  return <form onSubmit={submit} className="space-y-4">
+  return <AccountForm action="/api/auth/register" onSubmit={submit} className="space-y-4">
     {!done && <>
       <label className="block text-sm">姓名<input className={authInputClass} name="name" autoComplete="name" required maxLength={50}/></label>
       <label className="block text-sm">部门<input className={authInputClass} name="department" required maxLength={80}/></label>
@@ -25,5 +26,5 @@ export default function RegisterForm() {
       <button type="submit" className={authButtonClass} disabled={busy}>{busy ? "正在提交…" : "提交注册申请"}</button>
     </>}
     {result && <p role="status" className="text-sm">{result}</p>}
-  </form>;
+  </AccountForm>;
 }
