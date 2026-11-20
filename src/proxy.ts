@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE, userFromSession } from "@/lib/auth";
+import { hasLocalReportToken, isDirectLocalRequest } from "@/lib/management-report-access";
 
 const accountPages = new Set(["/login", "/register", "/forgot-password"]);
 const accountPosts = new Set(["/api/auth/register", "/api/auth/login", "/api/auth/logout"]);
@@ -19,17 +20,13 @@ export async function proxy(request: NextRequest) {
   }
   if (read && (accountPages.has(pathname) || pathname === "/brand/medbot-logo-white.png" || pathname === "/favicon.ico")) return allow();
   if (request.method === "POST" && accountPosts.has(pathname)) return allow();
-  // The existing reporting job runs on loopback. Its route independently checks the read-only bearer token.
-  if (read && pathname === "/api/management/ai-projects" && !request.headers.has("cf-ray") &&
-      (request.headers.get("x-forwarded-for") || "127.0.0.1").split(",").every(ip => ["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(ip.trim())) &&
-      /^(?:localhost|127\.0\.0\.1)(?::\d+)?$/.test(request.headers.get("host") || "") &&
-      request.headers.has("authorization")) return allow();
+  if (read && pathname === "/api/management/ai-projects" && hasLocalReportToken(request)) return allow();
 
   const user = await userFromSession(request.cookies.get(SESSION_COOKIE)?.value);
   if (!user) {
     if (!read || pathname.startsWith("/api/")) return NextResponse.json({ error: "请先登录企业账号" }, { status: 401, headers: privateHeaders });
     const host = request.headers.get("host") || "";
-    const local = !request.headers.has("cf-ray") && /^(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/.test(host);
+    const local = isDirectLocalRequest(request);
     const origin = local ? request.nextUrl.protocol + "//" + host : process.env.PUBLIC_BASE_URL || request.nextUrl.origin;
     const login = new URL("/login", origin);
     login.searchParams.set("next", pathname + search);

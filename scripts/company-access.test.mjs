@@ -57,7 +57,12 @@ test("company approval, initial-device login, password changes, resets and prote
       assert.equal(redirected.origin,base); assert.equal(redirected.pathname,"/login"); assert.equal(redirected.searchParams.get("next"),route);
     }
     for(const route of ["/api/posts","/api/files/sample.txt","/api/management/ai-projects"]) assert.equal((await visitor(route)).status,401,route);
-    assert.equal((await visitor("/api/management/ai-projects",null,{Authorization:"Bearer "+env.MANAGEMENT_REPORT_TOKEN})).status,200);
+    const reportPath = "/api/management/ai-projects";
+    const reportHeaders = { Authorization: "Bearer " + env.MANAGEMENT_REPORT_TOKEN };
+    assert.equal((await visitor(reportPath, null, reportHeaders)).status, 200);
+    assert.equal((await visitor(reportPath, null, { ...reportHeaders, "X-Forwarded-For": "192.168.65.1" })).status, 200);
+    assert.equal((await visitor(reportPath, null, { ...reportHeaders, "CF-Ray": "edge" })).status, 401);
+    assert.equal((await visitor(reportPath, null, { Authorization: "Bearer invalid" })).status, 401);
     assert.equal((await visitor("/api/auth/register",{...account,email:"employee@example.invalid"})).status,400);
     assert.equal((await visitor("/api/auth/register",account)).status,200);
     const pending=await db.user.findUniqueOrThrow({where:{email:account.email}});
@@ -75,6 +80,7 @@ test("company approval, initial-device login, password changes, resets and prote
     assert.equal((await employee("/api/auth/login",{email:account.email,password:initial})).status,200);
     assert.equal((await employee("/ai-projects")).status,200);
     assert.equal((await employee("/admin/users")).status,403);
+    assert.equal((await employee(reportPath, null, { ...reportHeaders, "CF-Ray": "edge" })).status, 401);
     assert.equal((await employee("/api/auth/change-password",{currentPassword:initial,password:personal,confirmPassword:personal})).status,200);
     const fresh=client();
     assert.equal((await fresh("/api/auth/login",{email:account.email,password:personal})).status,200);
