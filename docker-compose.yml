@@ -3,14 +3,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: webclaw:latest
+    image: ${WEBCLAW_IMAGE:-webclaw:latest}
     container_name: webclaw
     restart: unless-stopped
     ports:
-      - "${WEBCLAW_PORT:-3100}:3000"
+      - "${WEBCLAW_BIND_ADDRESS:-127.0.0.1}:${WEBCLAW_PORT:-3100}:3000"
     environment:
       DATABASE_URL: "file:/app/data/dev.db"
-      ADMIN_PASSWORD: "${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}"
+      INITIAL_USER_PASSWORD: "${INITIAL_USER_PASSWORD:?INITIAL_USER_PASSWORD must be set}"
+      COMPANY_EMAIL_DOMAINS: "${COMPANY_EMAIL_DOMAINS:-microport.com}"
+      PUBLIC_BASE_URL: "${PUBLIC_BASE_URL:-}"
       JWT_SECRET: "${JWT_SECRET:?JWT_SECRET must be set (use a long random string)}"
       MANAGEMENT_REPORT_TOKEN: "${MANAGEMENT_REPORT_TOKEN:-}"
       SEED_ON_STARTUP: "${SEED_ON_STARTUP:-false}"
@@ -26,7 +28,7 @@ services:
       start_period: 30s
 
   analytics-reporter:
-    image: webclaw:latest
+    image: ${WEBCLAW_IMAGE:-webclaw:latest}
     container_name: webclaw-analytics
     restart: unless-stopped
     environment:

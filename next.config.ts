@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  images: { unoptimized: true },
   async rewrites() {
     return { beforeFiles: [{ source: "/uploads/:path+", destination: "/api/files/:path+" }], afterFiles: [], fallback: [] };
   },

@@ -5,7 +5,7 @@
 ```bash
 # 1. 准备环境变量
 cp .env.example .env
-# 编辑 .env，至少设置 ADMIN_PASSWORD 和 JWT_SECRET
+# 在 .env 设置 INITIAL_USER_PASSWORD、JWT_SECRET 和 PUBLIC_BASE_URL
 #   JWT_SECRET 可用 `openssl rand -hex 32` 生成
 
 # 2. 构建并启动
@@ -17,13 +17,27 @@ open http://localhost:3100
 
 容器启动时使用 `prisma db push` 同步 SQLite 表结构。
 
+## 企业账号与首次启用
+
+公网用户通过 `/register` 提交企业邮箱、姓名和部门。管理员在 `/admin/users` 审批申请和重置密码，通过公司内部渠道将个人激活链接交给对应员工。员工可以沿用初始密码，也可以在 `/account` 设置个人密码。重置会使旧会话和旧激活链接失效。
+
+首次部署时，在服务器环境中设置 `COMPANY_ADMIN_EMAIL`、`COMPANY_ADMIN_NAME`、`COMPANY_ADMIN_DEPARTMENT` 和 `BOOTSTRAP_ADMIN_PASSWORD`。下列命令只在系统尚无管理员时建立首个账号。将输出文件私下交给该管理员。
+
+```sh
+umask 077
+mkdir -p tmp/medbot-access
+docker compose exec -T -e COMPANY_ADMIN_EMAIL -e COMPANY_ADMIN_NAME -e COMPANY_ADMIN_DEPARTMENT -e BOOTSTRAP_ADMIN_PASSWORD webclaw node scripts/bootstrap-company-admin.mjs > tmp/medbot-access/admin-activation.txt
+```
+
+已有部署可用 `docker-compose.public.yml` 复用原数据和附件卷。设置 `WEBCLAW_DATA_VOLUME`、`WEBCLAW_UPLOAD_VOLUME` 为原卷名，执行 `docker compose -f docker-compose.yml -f docker-compose.public.yml up -d`。此配置在本机的 3100 和 3610 端口提供同一个应用，隧道可转发至 3100。
+
 ## 项目总览与管理周报
 
 `/ai-projects` 展示从需求评审到质保结题的完整清单，也涵盖早期单独录入的产品。已关联的需求与产品共用一行。基础积分来自立项评审，核定积分来自结题评定，已发积分按实际发放累计。项目详情支持记录进展。
 
 `/ai-projects/weekly` 使用管理员登录。选择周次后可以补填成果、下周计划和资源需求，下载 CSV 清单和 Markdown 周报。流程记录按上海时间从周一零时起算，下一周周一零时结束。历史周报中的项目清单反映采集时的状态，周内变化见每个项目的 `week` 字段。
 
-供内部汇报程序读取时，在部署环境设置独立的 `MANAGEMENT_REPORT_TOKEN` 并重新创建应用容器。该令牌只读，写入周进展使用管理员会话。通过 HTTPS 或本机回环地址访问接口，令牌通过请求头发送。
+内部汇报程序可在服务器回环地址读取接口，将部署环境的 `MANAGEMENT_REPORT_TOKEN` 放入请求头。公网访问周报和写入周进展均使用已登录的管理员会话。
 
 ```bash
 curl --fail --silent --show-error \

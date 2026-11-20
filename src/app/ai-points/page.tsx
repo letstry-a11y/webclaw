@@ -1,3 +1,4 @@
+import { requireUser } from "@/lib/auth";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
@@ -63,18 +64,21 @@ function refreshPoints() {
 
 async function createMember(formData: FormData) {
   "use server";
+  await requireUser();
   await prisma.aiPointMember.create({ data: memberFromForm(formData) });
   refreshPoints();
 }
 
 async function updateMember(memberId: string, formData: FormData) {
   "use server";
+  await requireUser();
   await prisma.aiPointMember.update({ where: { id: memberId }, data: memberFromForm(formData) });
   refreshPoints();
 }
 
 async function addPointEntry(memberId: string, formData: FormData) {
   "use server";
+  await requireUser();
   const entry = entrySchema.parse({
     historicalDelta: formData.get("historicalDelta") ?? 0,
     availableDelta: formData.get("availableDelta") ?? 0,

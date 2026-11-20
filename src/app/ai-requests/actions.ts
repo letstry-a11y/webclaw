@@ -1,5 +1,7 @@
 "use server";
 
+import { requireUser } from "@/lib/auth";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -116,6 +118,7 @@ export async function createAiRequest(
   previousState: CreateAiRequestState,
   formData: FormData,
 ): Promise<CreateAiRequestState> {
+  await requireUser();
   const values = Object.fromEntries(
     [...formData.entries()].filter(
       ([key, value]) => Object.hasOwn(requestSchema.shape, key) && key !== "attachments" && typeof value === "string",
@@ -157,6 +160,7 @@ export async function createAiRequest(
 }
 
 export async function reviewAndPublish(requestId: string, formData: FormData) {
+  await requireUser();
   const review = reviewSchema.parse(Object.fromEntries(formData));
   await prisma.$transaction(async (tx) => {
     const changed = await tx.aiDemandRequest.updateMany({ where: { id: requestId, status: "pending_review" }, data: { ...review, status: "recruiting", reviewedAt: new Date() } });
@@ -197,6 +201,7 @@ export async function reviewAndPublish(requestId: string, formData: FormData) {
 }
 
 export async function updateCommitteeAssistant(requestId: string, formData: FormData) {
+  await requireUser();
   const committeeAssistant = committeeAssistantSchema.parse(formData.get("committeeAssistant"));
   const request = await prisma.aiDemandRequest.findUniqueOrThrow({ where: { id: requestId }, include: { activityPost: true } });
   if (request.status === "pending_review") throw new Error("请在需求评审时指定AI发展委员会协助人");
@@ -219,6 +224,7 @@ export async function updateCommitteeAssistant(requestId: string, formData: Form
 }
 
 export async function submitApplication(requestId: string, _previous: FormResult, formData: FormData): Promise<FormResult> {
+  await requireUser();
   const parsed = aiProjectApplicationSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: "请检查姓名、部门、邮箱、岗位、经验和每周可投入时间。" };
   const data = parsed.data;
@@ -242,6 +248,7 @@ export async function submitApplication(requestId: string, _previous: FormResult
 }
 
 export async function updateApplicationStatus(applicationId: string, requestId: string, status: string, _formData: FormData) {
+  await requireUser();
   void _formData;
   const nextStatus = z.enum(["pending", "reserve", "selected", "rejected"]).parse(status);
   await prisma.$transaction(async (tx) => {
@@ -257,6 +264,7 @@ export async function updateApplicationStatus(applicationId: string, requestId: 
 }
 
 export async function confirmTeam(requestId: string, _previous: FormResult, formData: FormData): Promise<FormResult> {
+  await requireUser();
   const leadIds = new Set(formData.getAll("leadApplicationId"));
   if (!leadIds.size) return { error: "请至少选择一位项目负责人。" };
   const result = await prisma.$transaction(async (tx) => {
@@ -312,6 +320,7 @@ const transitions = {
 } as const;
 
 export async function advanceProjectStage(requestId: string, targetStatus: string, formData: FormData) {
+  await requireUser();
   const target = z.enum(["developing", "trial", "delivered_pending_review"]).parse(targetStatus);
   const actor = z.string().trim().min(1).max(80).parse(formData.get("actor"));
   const transition = transitions[target];
@@ -325,6 +334,7 @@ export async function advanceProjectStage(requestId: string, targetStatus: strin
 }
 
 export async function scoreProject(requestId: string, formData: FormData) {
+  await requireUser();
   const data = z.object({
     effectCoefficient: z.coerce.number().refine(
       (value) => effectCoefficientValues.some((coefficient) => coefficient === value),
@@ -397,6 +407,7 @@ export async function proposePointAllocation(
   _previousState: PointAllocationActionState,
   formData: FormData,
 ): Promise<PointAllocationActionState> {
+  await requireUser();
   try {
     await persistPointAllocation(requestId, formData);
     return { error: "", success: "积分分配已保存，积分差额已同步更新" };
@@ -591,6 +602,7 @@ async function persistPointAllocation(requestId: string, formData: FormData) {
 }
 
 export async function completeWarranty(requestId: string, formData: FormData) {
+  await requireUser();
   const actor = z.string().trim().min(1).max(80).parse(formData.get("actor"));
   await settleWarrantyPoints(requestId, actor);
   refreshWorkflow(requestId);

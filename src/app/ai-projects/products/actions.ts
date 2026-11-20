@@ -1,5 +1,7 @@
 "use server";
 
+import { requireUser } from "@/lib/auth";
+
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -15,6 +17,7 @@ const productSchema = z.object({
 });
 
 export async function saveProduct(id: string, _previous: FormResult, form: FormData): Promise<FormResult> {
+  await requireUser();
   const parsed = productSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: "请填写产品名称，并检查资料字数与产品状态。" };
   const { owner, status, version, ...fields } = parsed.data;
@@ -34,6 +37,7 @@ export async function saveProduct(id: string, _previous: FormResult, form: FormD
 }
 
 export async function addProgress(type: "request" | "product", id: string, _previous: FormResult, form: FormData): Promise<FormResult> {
+  await requireUser();
   const parsed = z.object({ actor: z.string().trim().min(1).max(80), content: z.string().trim().min(1).max(2000) }).safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: "请填写更新人和进展，内容限 2,000 字。" };
   const { actor, content } = parsed.data;
