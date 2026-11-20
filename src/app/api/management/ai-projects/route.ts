@@ -1,21 +1,13 @@
-import { createHash, timingSafeEqual } from "node:crypto";
 import { isAdmin } from "@/lib/auth";
+import { hasLocalReportToken } from "@/lib/management-report-access";
 import { loadWeeklyReport, reportCsv, reportMarkdown } from "@/lib/project-weekly-report";
 import { reportingWeek } from "@/lib/report-week";
 
 export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "private, no-store", Vary: "Authorization, Cookie", "X-Robots-Tag": "noindex" };
 
-function hasReportToken(request: Request) {
-  const expected = process.env.MANAGEMENT_REPORT_TOKEN;
-  const value = request.headers.get("authorization")?.match(/^Bearer (\S+)$/i)?.[1];
-  if (!expected || !value) return false;
-  const digest = (s: string) => createHash("sha256").update(s).digest();
-  return timingSafeEqual(digest(value), digest(expected));
-}
-
 export async function GET(request: Request) {
-  if (!hasReportToken(request) && !await isAdmin()) {
+  if (!hasLocalReportToken(request) && !await isAdmin()) {
     return Response.json({ error: "请登录管理后台，或使用周报只读令牌" }, { status: 401, headers });
   }
   const params = new URL(request.url).searchParams;
