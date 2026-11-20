@@ -4,13 +4,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Search, PenSquare, Menu, X } from "lucide-react";
+import { Search, PenSquare, Menu, X, LogOut } from "lucide-react";
 
 const sections = [
   ["/", "首页"], ["/ai-projects", "AI 看板"], ["/ai", "AI"], ["/robots", "机器人"], ["/success-stories", "成果案例"],
 ] as const;
 
-export default function Navbar() {
+export default function Navbar({ userName }: { userName: string }) {
   const router = useRouter();
   const path = usePathname();
   const active = (href: string) => path === href || (href !== "/" && path.startsWith(href + "/")) ||
@@ -66,7 +66,10 @@ export default function Navbar() {
               <span className="hidden sm:inline">写文章</span>
             </Link>
 
-            {/* Mobile menu button */}
+            <Link href="/account" className="text-xs font-bold text-white/90" aria-label={`${userName}，我的账号`}>我的账号</Link>
+            <form action="/api/auth/logout" method="post">
+              <button aria-label={`${userName}，退出登录`} title={`${userName}，退出登录`} className="p-2 text-white/80 hover:text-white"><LogOut className="h-4 w-4" /></button>
+            </form>
             <button
               aria-label={mobileMenuOpen ? "关闭菜单" : "打开菜单"}
               aria-expanded={mobileMenuOpen}

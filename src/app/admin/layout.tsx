@@ -17,6 +17,7 @@ export default async function AdminLayout({
           {/* Sidebar */}
           <aside className="hidden md:block w-56 shrink-0">
             <nav className="bg-bg-card border border-border p-4 sticky top-24 space-y-1">
+              <Link href="/admin/users" className="block rounded-lg px-3 py-2 text-sm font-bold text-primary hover:bg-primary-light">企业账号审批</Link>
               <Link href="/admin" className="flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:text-primary hover:bg-primary-light rounded-lg transition-colors">
                 <LayoutDashboard className="w-4 h-4" /> 仪表盘
               </Link>

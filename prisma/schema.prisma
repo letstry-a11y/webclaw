@@ -215,6 +215,26 @@ model VisitRecord {
   @@index([sessionId, startedAt])
 }
 
+model User {
+  id                  String    @id @default(cuid())
+  name                String
+  email               String    @unique
+  loginAlias          String?   @unique
+  department          String
+  status              String    @default("pending")
+  role                String    @default("employee")
+  passwordHash        String?
+  activationHash      String?
+  sessionVersion      Int       @default(1)
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  lastLoginAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([status, createdAt])
+}
+
 model AiProjectApplication {
   id                 String   @id @default(cuid())
   requestId          String

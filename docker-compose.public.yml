@@ -1,0 +1,12 @@
+services:
+  webclaw:
+    ports:
+      - "127.0.0.1:${WEBCLAW_PREVIEW_PORT:-3610}:3000"
+
+volumes:
+  webclaw-data:
+    external: true
+    name: ${WEBCLAW_DATA_VOLUME:?Select the existing Docker data volume}
+  webclaw-uploads:
+    external: true
+    name: ${WEBCLAW_UPLOAD_VOLUME:?Select the existing uploads volume}

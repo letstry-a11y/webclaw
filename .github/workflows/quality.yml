@@ -52,3 +52,6 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      - name: Test company access against the production server
+        run: node --test scripts/company-access.test.mjs
